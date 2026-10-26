@@ -44,7 +44,7 @@ textarea{min-height:180px;line-height:1.65;font-family:"New York","Iowan Old Sty
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border-color:var(--acc);box-shadow:0 0 0 4px var(--glow)}
 label{display:block;font-size:.78rem;font-weight:500;color:var(--mute);margin:12px 2px 5px}
 .btn{font:inherit;font-size:.9rem;font-weight:600;padding:9px 18px;border-radius:999px;border:0;background:linear-gradient(180deg,var(--acc2),var(--acc));color:var(--accfg);cursor:pointer;box-shadow:0 8px 20px -10px var(--acc);transition:transform .12s,opacity .2s}
-.btn:active{transform:scale(.97)}
+.btn:active{transform:scale(.96);opacity:.8}
 .btn.alt{background:var(--fill);color:var(--ink);box-shadow:none}
 .btn:focus-visible,nav button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .tag{font-size:.74rem;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--fill);color:var(--mute)}
@@ -56,12 +56,19 @@ p{margin:.45rem 0}
 .stat{color:var(--mute);font-size:.85rem}
 .stat b{display:block;font-size:2.5rem;font-weight:600;letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums}
 .wide{overflow-x:auto}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:50;pointer-events:none}
+.toast{pointer-events:auto;max-width:min(92vw,520px);padding:11px 16px;border-radius:18px;background:var(--panel);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--line);box-shadow:0 18px 40px -18px rgba(0,0,0,.8);font-size:.92rem;font-weight:500;animation:tin .22s ease-out}
+.toast.ok{border-color:color-mix(in srgb,var(--ok) 50%,transparent)}.toast.err{border-color:color-mix(in srgb,var(--err) 60%,transparent)}.toast.warn{border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.tag.busy{color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
 </style>
 </head>
 <body>
-<header><h1>INKFORGE</h1><span id="store" class="tag">loading</span></header>
+<header><h1>INKFORGE</h1><span style="display:flex;gap:8px;align-items:center"><span id="busy" class="tag busy" hidden></span><span id="store" class="tag">loading</span></span></header>
 <nav id="nav"></nav>
+<div id="toasts" aria-live="polite"></div>
 <main id="main"></main>
 <button id="helpBtn" aria-label="How-to guide" title="How-to guide">🔧</button>
 <div id="help" hidden role="dialog" aria-modal="true" aria-label="How-to guide"><div class="sheet">
@@ -94,6 +101,7 @@ p{margin:.45rem 0}
 <li>Tap <b>Send to quality check</b>. Fix anything in red.</li>
 <li>Tap <b>Approve manuscript</b>. If editorial readiness isn’t met you can <b>Approve with override</b>; the override is recorded.</li>
 <li><b>Show export</b> gives Markdown to copy out. Unapproved books are watermarked.</li></ol></details>
+<details><summary>What the messages mean</summary><ul><li>A short message appears at the top after every button: <b>✓</b> done, <b>⚠</b> something is wrong (it says what), <b>•</b> started or for your information, <b>⏳</b> waiting (it says why). Tap a message to dismiss it.</li><li>While an AI task runs, a pulsing <b>AI working…</b> shows at the top. Wait for the ✓ or ⚠ message before tapping again; repeat taps are ignored for identical tasks.</li></ul></details>
 <details><summary>7. Keep your work safe</summary><ul>
 <li>Settings → <b>Show backup JSON</b> → copy it somewhere outside the app. Do this after each approved chapter.</li>
 <li>To restore: paste the backup into the box and tap <b>Restore from box</b>. Your API key is never in a backup.</li>
@@ -275,7 +283,7 @@ function mkTask(kind,ref,prompt){
   t.snapshot=snapOf(kind==="outline"||kind==="audit"?ref:(S.chapters.find(x=>x.id===ref)||{}).bookId);S.tasks.unshift(t);S.tasks=S.tasks.slice(0,100);log("task.create",kind,t.id);return t}
 async function runTask(t){
   const st=S.settings,why=ineligible();
-  if(why){t.status="queued";t.error=why;t.updated=now();log("task.queued",t.kind+" – "+why,t.id);return commit()}
+  if(why){t.status="queued";t.error=why;t.updated=now();log("task.queued",t.kind+" – "+why,t.id);commit();toast((TLBL[t.kind]||"Task")+" is waiting: "+why,"warn");return}
   t.status="running";t.error="";t.attempts=0;t.updated=now();commit();
   const key=getKey();let extra="";
   for(;;){
@@ -292,7 +300,7 @@ async function runTask(t){
       if(k==="transient"&&t.attempts<=st.retries&&!timedOut){await new Promise(r=>setTimeout(r,(st.backoffMs||1000)*(e.status===503?5:1)*2**(t.attempts-1)));if(t.status==="cancelled")break;continue}
       if(k==="quota"){S.settings.coolUntil=new Date(Date.now()+600000).toISOString();t.status="queued";t.error="Quota or rate limit hit (HTTP 429). Provider paused for 10 minutes; task kept.";break}
       t.status="failed";t.error=({auth:"Key rejected (HTTP "+e.status+"). Check the API key.",permanent:"Request rejected (HTTP "+e.status+"). Check the model id.",transient:"Provider unreachable after "+t.attempts+" attempt(s) ["+(timedOut?"no reply in "+Math.round((st.timeoutMs||60000)/1000)+"s; use fewer chapters or raise the timeout in Settings":e.status===503?"HTTP 503: Google says the model is overloaded; wait a few minutes or switch model":e.message)+"]. Content is safe; try again later."})[k];break}}
-  if(t.status==="done"&&!t.ingested){if(t.kind==="editorial"||t.kind==="continuity")ingest(t);else if(t.kind==="state")ingestState(t);else if(t.kind==="audit")ingestAudit(t);else if(t.kind==="canon")ingestCanon(t)}delete ctl[t.id];t.updated=now();log("task."+t.status,t.kind+(t.error?" – "+t.error:""),t.id);commit()}
+  if(t.status==="done"&&!t.ingested){if(t.kind==="editorial"||t.kind==="continuity")ingest(t);else if(t.kind==="state")ingestState(t);else if(t.kind==="audit")ingestAudit(t);else if(t.kind==="canon")ingestCanon(t)}delete ctl[t.id];t.updated=now();log("task."+t.status,t.kind+(t.error?" – "+t.error:""),t.id);commit();toastTask(t)}
 function draftBox(c){const t=S.tasks.find(x=>x.kind==="draft"&&x.ref===c.id&&!x.closed);if(!t)return"";
   if(t.status==="done")return'<div class="card" style="background:var(--fill)"><b>AI draft ready</b> · '+wc(t.result)+' words<div class="row" style="margin-top:6px"><button class="btn" data-a="useDraft" data-id="'+t.id+'">Use draft (current text kept as a version)</button><button class="btn alt" data-a="discardDraft" data-id="'+t.id+'">Discard</button></div></div>';
   return'<p class="mute">AI draft task: '+t.status+(t.error?" – "+esc(t.error):"")+" (see AI Tasks)</p>"}
@@ -301,7 +309,7 @@ function vTasks(){const why=ineligible();
   let h='<div class="card"><p>Calls today: <b>'+callsToday()+"</b> of "+S.settings.limit+' (UTC day). Provider free quota: <b>unknown</b> (never assumed).</p><p class="'+(why?"warn":"ok")+'">'+(why?"AI unavailable: "+esc(why):"AI eligible and ready.")+"</p></div>"+(msg?'<p class="err">'+esc(msg)+"</p>":"");
   return h+(S.tasks.length?S.tasks.map(t=>{const rep=t.calls.reduce((a,c)=>a+(c.reported?c.reported.total||0:0),0),est=t.calls.reduce((a,c)=>a+c.estimated.prompt+c.estimated.output,0),ap=t.kind==="outline"&&t.status==="done"&&!t.closed;
     return'<div class="card"><div class="row sp"><h3>'+esc(t.kind)+" · "+t.id+"</h3>"+tag(t.status)+'</div><p class="mute">'+esc(t.provider)+" / "+esc(t.model)+" · "+t.promptVersion+" · attempts "+t.attempts+" · calls "+t.calls.length+tookTxt(t)+'</p><p class="mute">Tokens: reported '+(t.calls.some(c=>c.reported)?rep:"not reported")+" · estimated ~"+est+" (characters ÷ 4)</p>"+(t.error?'<p class="err">'+esc(t.error)+"</p>":"")+(["editorial","continuity","audit","state"].includes(t.kind)&&t.status==="done"?'<p class="mute">Result: '+t.result.length+" item(s) reported</p>":"")+'<details><summary class="mute">View what was sent</summary><textarea readonly style="min-height:160px;font-size:.8rem">'+esc(t.prompt)+"</textarea></details>"+'<div class="row">'+(["queued","failed","cancelled"].includes(t.status)?'<button class="btn" data-a="runT" data-id="'+t.id+'">Run</button>':"")+(["queued","running"].includes(t.status)?'<button class="btn alt" data-a="cancelT" data-id="'+t.id+'">Cancel</button>':"")+(ap?'<button class="btn" data-a="applyOutline" data-id="'+t.id+'">Apply outline ('+t.result.length+' chapters)</button><button class="btn alt" data-a="closeT" data-id="'+t.id+'">Discard</button>':"")+"</div>"+(ap?"<ul>"+t.result.map(o=>"<li>"+esc(o.title)+"</li>").join("")+"</ul>":"")+"</div>"}).join(""):'<p class="mute">No AI tasks yet. Generate an outline or chapter draft from a book.</p>')}
-function aiCard(){const s=S.settings;return'<div class="card"><h3>AI provider (Google Gemini API)</h3><p class="mute">Build 5B.11</p><p class="mute">The key stays in this browser only and is never put in backups or logs. When you run a task, the brief, canon and chapter text for that task go straight from your browser to Google. Free quota and terms are unknown here; check your Google account.</p><p>'+(getKey()?'<span class="tag ok">key set</span>':'<span class="tag warn">no key</span>')+'</p><label>API key (blank keeps current)</label><input id="apikey" type="password" autocomplete="off"><label>Model id (verify it exists for your key)</label><input id="amodel" value="'+esc(s.model)+'"><label>Daily call limit</label><input id="alimit" type="number" value="'+s.limit+'"><label>Max output tokens</label><input id="amax" type="number" value="'+s.maxOut+'"><label>Retries (0 to 5)</label><input id="aret" type="number" value="'+s.retries+'"><label>Request timeout (seconds)</label><input id="atimeout" type="number" value="'+Math.round((s.timeoutMs||60000)/1000)+'"><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="astream" style="width:auto"'+(s.stream!==false?" checked":"")+'> Stream replies (keeps the connection alive on slow models)</label><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="aauto" style="width:auto"'+(s.autoCont?" checked":"")+'> Run a continuity check automatically after applying an outline or using a draft (uses extra calls)</label><div class="row" style="margin-top:8px"><button class="btn" data-a="saveAI">Save AI settings</button><button class="btn alt" data-a="clearKey">Remove key</button></div><div class="row" style="margin-top:8px"><button class="btn alt" data-a="listModels">Test connection and list models</button><button class="btn alt" data-a="testSend">Send test message</button></div>'+modelBox()+'</div>'}
+function aiCard(){const s=S.settings;return'<div class="card"><h3>AI provider (Google Gemini API)</h3><p class="mute">Build 5B.12</p><p class="mute">The key stays in this browser only and is never put in backups or logs. When you run a task, the brief, canon and chapter text for that task go straight from your browser to Google. Free quota and terms are unknown here; check your Google account.</p><p>'+(getKey()?'<span class="tag ok">key set</span>':'<span class="tag warn">no key</span>')+'</p><label>API key (blank keeps current)</label><input id="apikey" type="password" autocomplete="off"><label>Model id (verify it exists for your key)</label><input id="amodel" value="'+esc(s.model)+'"><label>Daily call limit</label><input id="alimit" type="number" value="'+s.limit+'"><label>Max output tokens</label><input id="amax" type="number" value="'+s.maxOut+'"><label>Retries (0 to 5)</label><input id="aret" type="number" value="'+s.retries+'"><label>Request timeout (seconds)</label><input id="atimeout" type="number" value="'+Math.round((s.timeoutMs||60000)/1000)+'"><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="astream" style="width:auto"'+(s.stream!==false?" checked":"")+'> Stream replies (keeps the connection alive on slow models)</label><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="aauto" style="width:auto"'+(s.autoCont?" checked":"")+'> Run a continuity check automatically after applying an outline or using a draft (uses extra calls)</label><div class="row" style="margin-top:8px"><button class="btn" data-a="saveAI">Save AI settings</button><button class="btn alt" data-a="clearKey">Remove key</button></div><div class="row" style="margin-top:8px"><button class="btn alt" data-a="listModels">Test connection and list models</button><button class="btn alt" data-a="testSend">Send test message</button></div>'+modelBox()+'</div>'}
 
 /* ---------- Phase 4: editorial findings ---------- */
 const SCOPES={developmental:"story structure, pacing and scene purpose",romance:"romantic and emotional arc, chemistry and tension",continuity:"contradictions with the approved canon and brief",line:"sentence-level style and clarity",copy:"grammar, usage and consistency",proof:"typos and punctuation",voice:"voice and style consistency and repetition"};
@@ -361,6 +369,36 @@ function ingestCanon(t){const c=S.chapters.find(x=>x.id===t.ref),b=c&&S.books.fi
 
 function syncCanon(c){if(!c||c.status!=="proposed")return;const n=$("#ce_n_"+c.id),d=$("#ce_d_"+c.id);if(!n||!d)return;const nn=n.value.trim(),dd=d.value.trim();if(nn&&dd&&(nn!==c.name||dd!==c.desc)){c.name=nn;c.desc=dd;c.version++;log("canon.edit",c.name,c.id)}}
 
+/* ---------- Feedback: toasts, busy indicator, action messages ---------- */
+let lastToast=null;
+function toast(text,kind){kind=kind||"ok";lastToast={text,kind};const box=$("#toasts");if(!box||!document.createElement)return;
+  const d=document.createElement("div");d.className="toast "+kind;d.textContent=({ok:"✓ ",err:"⚠ ",info:"• ",warn:"⏳ "}[kind]||"")+text;
+  d.addEventListener("click",()=>d.remove());box.appendChild(d);while(box.children.length>3)box.removeChild(box.firstChild);
+  setTimeout(()=>d.remove(),({ok:2400,info:3400,warn:5000,err:6000})[kind]||3000)}
+function paintBusy(){const e=$("#busy");if(!e)return;const n=S.tasks.filter(t=>t.status==="running").length;e.hidden=!n;e.textContent=n?"AI working…":""}
+const TLBL={outline:"Outline",draft:"Chapter draft",editorial:"Editorial check",continuity:"Continuity check",audit:"Manuscript audit",state:"State extraction",canon:"Canon proposals"};
+function toastTask(t){const n=t.result&&t.result.length,s=t.calls.length&&t.calls[t.calls.length-1].ms!=null?" in "+Math.round(t.calls[t.calls.length-1].ms/1000)+"s":"";
+  if(t.status==="done"){toast(({outline:"Outline ready ("+n+" chapters)"+s+". Open AI Tasks to apply it",draft:"Draft ready"+s+". Tap Use draft on the chapter",editorial:"Editorial check finished"+s+": "+n+" finding(s)",continuity:"Continuity check finished"+s+": "+n+" finding(s)",audit:"Manuscript audit finished"+s+": "+n+" finding(s)",state:"State extraction finished"+s+": "+n+" proposal(s). See Book State",canon:"Canon check finished"+s+": "+n+" item(s). See Series Bible"})[t.kind]||"Task finished","ok")}
+  else if(t.status==="failed")toast((TLBL[t.kind]||"Task")+" failed: "+t.error,"err");
+  else if(t.status==="queued")toast((TLBL[t.kind]||"Task")+" is waiting: "+t.error,"warn");
+  else if(t.status==="cancelled")toast((TLBL[t.kind]||"Task")+" cancelled","info")}
+const GEN={genOutline:"Outline requested. I’ll tell you when it’s ready",genDraft:"Drafting started. This can take a minute or two",genState:"Extracting state…",genCanon:"Looking for canon facts…",genAudit:"Manuscript audit started",genEdit:"Editorial check started",genCont:"Continuity check started",runT:"Task restarted"};
+const DONE={addPen:"Pen name added",delPen:"Pen name deleted",addSeries:"Series added",delSeries:"Series deleted",addBook:"Book added",addCh:"Chapter added",delCh:"Chapter deleted",saveCh:"Version saved",
+  ch:{submit:"Submitted for review",approve:"Chapter approved and locked",reject:"Returned to draft",reopen:"Reopened for edits"},
+  bk:{to_qa:"Sent to quality check",back_to_drafting:"Back to drafting",approve:"Manuscript approved",revoke:"Approval revoked"},
+  exp:"Export shown below. Copy it out",bkp:"Backup shown. Copy it somewhere safe",rst:"Backup restored",th:"Theme changed",
+  newBrief:"Brief started",saveBrief:"Brief draft saved",approveBrief:"Brief approved and locked",reviseBrief:"New brief version started",
+  addCanon:"Canon proposed",canon:{approve:"Approved as canon",reject:"Proposal rejected",flag:"Marked contradicted",supersede:"Marked superseded"},editCanon:"Edit saved",delCanon:"Entry deleted",
+  finding:{accept:"Finding accepted",dismiss:"Finding dismissed",escalate:"Finding escalated",resolve:"Finding resolved"},fixF:"Fix applied. Previous text kept as a version",
+  useDraft:"Draft applied. Previous text kept as a version",discardDraft:"Draft discarded",closeT:"Discarded",applyOutline:"Outline applied: chapters added",cancelT:"Task cancelled",
+  saveAI:"AI settings saved",clearKey:"API key removed",pickModel:b=>"Model set to "+b.dataset.m,addState:"Entry added",
+  stateAct:{accept:"Accepted into Book State",reject:"Entry rejected",resolve:"Marked resolved",reopen:"Reopened"},corrState:"Correction saved",delState:"Entry deleted"};
+function feedback(b,r){const a=b.dataset.a;
+  if(msg){toast(msg,/^(Same inputs|An identical|Nothing changed)/.test(msg)?"info":"err");return}
+  if(GEN[a]){if(r==="keep"&&S.tasks.some(t=>t.status==="running"))toast(GEN[a],"info");return}
+  let m=DONE[a];if(m&&typeof m==="object")m=m[b.dataset.act];if(typeof m==="function")m=m(b);if(m)toast(m,"ok")}
+function doAction(b){msg="";if(navigator.vibrate)try{navigator.vibrate(8)}catch(x){}const r=A[b.dataset.a](b);feedback(b,r);return r}
+
 /* ---------- Views ---------- */
 const tag=(s)=>'<span class="tag '+({approved:"ok",review:"warn",qa:"warn"}[s]||"")+'">'+esc(s)+"</span>";
 const opts=(arr,sel,f)=>arr.map(x=>'<option value="'+x.id+'"'+(x.id===sel?" selected":"")+">"+esc(f(x))+"</option>").join("");
@@ -413,7 +451,7 @@ function vSettings(){const s=S.settings;
 function render(){
   $("#nav").innerHTML=VIEWS.map(v=>'<button class="'+(view===v[0]?"on":"")+'" data-v="'+v[0]+'">'+v[1]+"</button>").join("")+PLANNED.map(p=>'<button disabled title="Not built yet">'+p+"</button>").join("");
   const f={overview:vOverview,pens:vPens,series:vSeries,books:vBooks,studio:vStudio,bible:vBible,state:vState,tasks:vTasks,log:vLog,settings:vSettings}[view];
-  const y=scrollY;$("#main").innerHTML="<h2>"+VIEWS.find(v=>v[0]===view)[1]+"</h2>"+f();scrollTo(0,y)}
+  paintBusy();const y=scrollY;$("#main").innerHTML="<h2>"+VIEWS.find(v=>v[0]===view)[1]+"</h2>"+f();scrollTo(0,y)}
 
 /* ---------- Actions ---------- */
 const val=i=>($("#"+i)||{}).value||"";
@@ -426,7 +464,7 @@ const A={
   open(e){bookId=e.dataset.id;msg=""},back(){bookId=null;msg=""},
   addCh(e){if(!approvedBrief(e.dataset.id))return msg="Approve a story brief for this book in Story Studio before adding chapters.";const n=chaptersOf(e.dataset.id).length+1;const c={id:id("ch"),bookId:e.dataset.id,number:n,title:"Chapter "+n,text:"",status:"draft",version:1,created:now(),updated:now()};S.chapters.push(c);log("chapter.create",c.title,c.id);msg=""},
   delCh(e){const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="draft")return;S.chapters=S.chapters.filter(x=>x!==c);S.chapters.filter(x=>x.bookId===c.bookId).sort((a,b)=>a.number-b.number).forEach((x,i)=>x.number=i+1);log("chapter.delete",c.title)},
-  saveCh(e){const c=S.chapters.find(x=>x.id===e.dataset.id);syncCh(c);return true},
+  saveCh(e){const c=S.chapters.find(x=>x.id===e.dataset.id);const v0=c.version,o0=c.outline;syncCh(c);if(c.version===v0&&c.outline===o0)msg="Nothing changed since the last save.";return true},
   ch(e){const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="approved")syncCh(c);msg=chTransition(c,e.dataset.act)},
   bk(e){const b=S.books.find(x=>x.id===e.dataset.id);msg=bkTransition(b,e.dataset.act,e.dataset.force==="1")},
   exp(e){const b=S.books.find(x=>x.id===e.dataset.id);const d=$("#exp");d.innerHTML='<textarea readonly style="margin-top:8px"></textarea>';d.firstChild.value=manuscript(b);d.firstChild.select();log("export",b.title+" ("+(b.status==="approved"?"approved":"unapproved draft")+")",b.id);save();return"keep"},
@@ -453,13 +491,13 @@ const A={
   saveAI(){msg="";const k=val("apikey").trim(),s=S.settings;if(k){if(/[^\x21-\x7E]/.test(k))msg="That key contains spaces, line breaks or odd characters. Copy it again from Google.";else try{localStorage.setItem(KEYNAME,k)}catch(x){msg="Could not store the key in this browser."}}s.model=val("amodel").trim()||s.model;s.limit=Math.max(0,parseInt(val("alimit"))||0);s.maxOut=Math.min(32000,Math.max(256,parseInt(val("amax"))||6000));s.retries=Math.min(5,Math.max(0,parseInt(val("aret"))||0));s.timeoutMs=Math.min(600,Math.max(10,parseInt(val("atimeout"))||180))*1000;s.stream=!!($("#astream")||{checked:true}).checked;s.autoCont=!!($("#aauto")||{}).checked;log("settings","AI settings saved")},
   listModels(){const key=getKey();if(!key){modelList=null;modelMsg="Save an API key first.";return}
     modelMsg="Checking…";modelList=null;render();
-    PROVIDERS[S.settings.provider].list({key}).then(l=>{modelList=l;modelMsg=l.length?l.length+" models support text generation. The connection and key work.":"Connected, but no text-generation models were returned.";render()}).catch(e=>{modelList=null;modelMsg=describeErr(e);render()});return"keep"},
+    PROVIDERS[S.settings.provider].list({key}).then(l=>{modelList=l;modelMsg=l.length?l.length+" models support text generation. The connection and key work.":"Connected, but no text-generation models were returned.";render();toast(l.length?"Connection works: "+l.length+" models available":"Connected, but no models returned","ok")}).catch(e=>{modelList=null;modelMsg=describeErr(e);render();toast("Connection test failed. See the message in Settings","err")});return"keep"},
   testSend(){const key=getKey();if(!key){modelList=null;modelMsg="Save an API key first.";return}
     modelList=null;modelMsg="Sending test messages…";render();const P=PROVIDERS[S.settings.provider],m=S.settings.model;
     const run=async stream=>{const t0=Date.now(),c=new AbortController(),to=setTimeout(()=>c.abort(),60000),nm=stream?"Streaming":"Normal",el=()=>((Date.now()-t0)/1000).toFixed(1)+"s";
       try{const r=await P.call({key,model:m,system:"Reply briefly.",prompt:"Reply with the single word OK.",maxOut:300,json:false,signal:c.signal,stream});clearTimeout(to);return nm+": OK in "+el()+", reply “"+r.text.trim().slice(0,40)+"”"+(r.usage?", "+r.usage.total+" tokens":"")}
       catch(e){clearTimeout(to);return nm+": FAILED after "+el()+". "+(e.name==="AbortError"?"No reply in 60s.":describeErr(e))}};
-    run(false).then(a=>run(true).then(b=>{modelMsg=a+"\n"+b+"\nModel: "+m;render()}));return"keep"},
+    run(false).then(a=>run(true).then(b=>{modelMsg=a+"\n"+b+"\nModel: "+m;render();toast("Test finished. Results are in Settings","info")}));return"keep"},
   pickModel(e){S.settings.model=e.dataset.m;log("settings","Model set to "+e.dataset.m)},
   clearKey(){try{localStorage.removeItem(KEYNAME)}catch(x){}log("settings","API key removed")},
   genEdit(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return;syncCh(c);if(!wc(c.text))return msg="Chapter is empty.";const br=approvedBrief(c.bookId);if(!br)return msg="Approve a story brief first.";
@@ -505,11 +543,11 @@ function syncCh(c){const t=document.querySelector('[data-f="text"][data-id="'+c.
 document.addEventListener("click",ev=>{
   const v=ev.target.closest("nav button[data-v]");if(v){view=v.dataset.v;bookId=null;msg="";render();return}
   const b=ev.target.closest("[data-a]");if(!b)return;
-  const r=A[b.dataset.a](b);if(r==="keep")return;commit()});
+  if(doAction(b)==="keep")return;commit()});
 document.addEventListener("change",ev=>{const t=ev.target;
-  if(t.id==="kill"){S.settings.kill=t.checked;log("settings","AI kill switch "+(t.checked?"on":"off"));commit()}
-  if(t.id==="noai"){S.settings.noAI=t.checked;log("settings","No-AI mode "+(t.checked?"on":"off"));commit()}
-  if(t.id==="sb"){selBook=t.value;msg="";render()}if(t.id==="sbs"){selSeries=t.value;msg="";render()}if(t.id==="tol"){S.settings.tol=Math.max(0,parseInt(t.value)||15);commit()}});
+  if(t.id==="kill"){S.settings.kill=t.checked;log("settings","AI kill switch "+(t.checked?"on":"off"));commit();toast(t.checked?"Kill switch ON: no AI calls will run":"Kill switch off",t.checked?"info":"warn")}
+  if(t.id==="noai"){S.settings.noAI=t.checked;log("settings","No-AI mode "+(t.checked?"on":"off"));commit();toast(t.checked?"No-AI mode ON: no AI calls will run":"No-AI mode off",t.checked?"info":"warn")}
+  if(t.id==="sb"){selBook=t.value;msg="";render()}if(t.id==="sbs"){selSeries=t.value;msg="";render()}if(t.id==="tol"){S.settings.tol=Math.max(0,parseInt(t.value)||15);commit();toast("Tolerance saved")}});
 
 render();load().then(render);
 (function(){const b=$("#helpBtn"),p=$("#help"),c=$("#helpClose");if(!b||!p||!c)return;const o=()=>{p.hidden=false},x=()=>{p.hidden=true};b.addEventListener("click",o);c.addEventListener("click",x);p.addEventListener("click",e=>{if(e.target===p)x()});document.addEventListener("keydown",e=>{if(e.key==="Escape")x()})})();
