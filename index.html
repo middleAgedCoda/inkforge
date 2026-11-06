@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>INKFORGE</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#000;--fill:rgba(255,255,255,.07);--panel:rgba(32,32,36,.62);--ink:#f5f5f7;--mute:#98989f;--line:rgba(255,255,255,.1);--acc:#ff375f;--acc2:#ff6482;--accfg:#fff;--ok:#32d74b;--warn:#ffd60a;--err:#ff453a;--glow:rgba(255,55,95,.2);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5f5f7;--fill:rgba(0,0,0,.05);--panel:rgba(255,255,255,.8);--ink:#1d1d1f;--mute:#6e6e73;--line:rgba(0,0,0,.1);--acc:#d70040;--acc2:#ff375f;--ok:#1f8a3b;--warn:#a65a00;--err:#d70015;--glow:rgba(215,0,64,.1);color-scheme:light}}
+:root[data-theme="light"]{--bg:#f5f5f7;--fill:rgba(0,0,0,.05);--panel:rgba(255,255,255,.8);--ink:#1d1d1f;--mute:#6e6e73;--line:rgba(0,0,0,.1);--acc:#d70040;--acc2:#ff375f;--ok:#1f8a3b;--warn:#a65a00;--err:#d70015;--glow:rgba(215,0,64,.1);color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:radial-gradient(900px 420px at 50% -90px,var(--glow),transparent 70%),var(--bg);background-attachment:fixed;font:400 16px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.011em}
+h1,h2,h3{margin:0 0 .5rem;line-height:1.15;font-weight:600;letter-spacing:-.022em}
+h1{font-size:.95rem;font-weight:600;letter-spacing:.34em}
+main>h2{font-size:2.1rem;font-weight:700;letter-spacing:-.035em;margin:10px 4px 18px}
+h2{font-size:1.25rem}h3{font-size:1.05rem}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--panel);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+nav{display:flex;gap:6px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;font:inherit;font-size:.88rem;font-weight:500;border:0;background:var(--fill);color:var(--mute);padding:7px 14px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+nav button.on{background:var(--ink);color:var(--bg)}
+nav button[disabled]{opacity:.35;cursor:not-allowed}
+main{max-width:820px;margin:0 auto;padding:12px 16px 96px}
+#helpBtn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--panel);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);font-size:1.4rem;line-height:1;cursor:pointer;z-index:20;box-shadow:0 14px 30px -14px rgba(0,0,0,.7)}
+#help{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#help[hidden]{display:none}
+#help .sheet{width:100%;max-width:820px;margin:0 auto;max-height:88vh;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:26px 26px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom,0px))}
+#help details{background:var(--fill);border-radius:16px;padding:12px 14px;margin:10px 0}
+#help summary{font-weight:600;cursor:pointer;list-style:none}
+#help summary::-webkit-details-marker{display:none}
+#help ol,#help ul{padding-left:1.2rem;margin:.6rem 0 0}
+#help li{margin:.4rem 0}
+.card{background:var(--panel);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--line);border-radius:22px;padding:18px;margin-bottom:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 22px 44px -28px rgba(0,0,0,.65)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sp{justify-content:space-between}
+input,select,textarea{font:inherit;font-size:1rem;width:100%;padding:11px 13px;border:1px solid transparent;border-radius:13px;background:var(--fill);color:var(--ink);transition:border-color .2s,box-shadow .2s}
+textarea{min-height:180px;line-height:1.65;font-family:"New York","Iowan Old Style","Palatino Linotype",Georgia,serif;font-size:1.02rem}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0;border-color:var(--acc);box-shadow:0 0 0 4px var(--glow)}
+label{display:block;font-size:.78rem;font-weight:500;color:var(--mute);margin:12px 2px 5px}
+.btn{font:inherit;font-size:.9rem;font-weight:600;padding:9px 18px;border-radius:999px;border:0;background:linear-gradient(180deg,var(--acc2),var(--acc));color:var(--accfg);cursor:pointer;box-shadow:0 8px 20px -10px var(--acc);transition:transform .12s,opacity .2s}
+.btn:active{transform:scale(.96);opacity:.8}
+.btn.alt{background:var(--fill);color:var(--ink);box-shadow:none}
+.btn:focus-visible,nav button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tag{font-size:.74rem;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--fill);color:var(--mute)}
+.tag.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}.tag.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}.tag.err{color:var(--err);background:color-mix(in srgb,var(--err) 14%,transparent)}
+.mute{color:var(--mute);font-size:.88rem}.err{color:var(--err)}.ok{color:var(--ok)}.warn{color:var(--warn)}
+ul{padding-left:1.1rem;margin:.3rem 0}
+p{margin:.45rem 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{color:var(--mute);font-size:.85rem}
+.stat b{display:block;font-size:2.5rem;font-weight:600;letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums}
+.wide{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:50;pointer-events:none}
+.toast{pointer-events:auto;max-width:min(92vw,520px);padding:11px 16px;border-radius:18px;background:var(--panel);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--line);box-shadow:0 18px 40px -18px rgba(0,0,0,.8);font-size:.92rem;font-weight:500;animation:tin .22s ease-out}
+.toast.ok{border-color:color-mix(in srgb,var(--ok) 50%,transparent)}.toast.err{border-color:color-mix(in srgb,var(--err) 60%,transparent)}.toast.warn{border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.tag.busy{color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+</style>
+</head>
+<body>
+<header><h1>INKFORGE</h1><span style="display:flex;gap:8px;align-items:center"><span id="busy" class="tag busy" hidden></span><span id="store" class="tag">loading</span></span></header>
+<nav id="nav"></nav>
+<div id="toasts" aria-live="polite"></div>
+<main id="main"></main>
+<button id="helpBtn" aria-label="How-to guide" title="How-to guide">🔧</button>
+<div id="help" hidden role="dialog" aria-modal="true" aria-label="How-to guide"><div class="sheet">
+<div class="row sp"><h2 style="margin:0">How to use INKFORGE</h2><button class="btn alt" id="helpClose">Close</button></div>
+<p class="mute">The whole process, start to finish. Tap a step to open it. You stay in charge: nothing is final until you approve it.</p>
+<details open><summary>1. First-time setup</summary><ol>
+<li><b>Pen names</b>: add a name and its voice notes. <b>Series</b>: add a series under that pen name. <b>Books</b>: add a book in the series.</li>
+<li><b>Story Studio</b>: start a brief for the book and fill every field marked “required”, then tap <b>Approve brief</b>. Chapters can’t be added until a brief is approved. To change it later, tap <b>Start new version</b>.</li>
+<li><b>Series Bible</b>: propose facts that must never change (names, ages, places, relationships), then tap <b>Approve as canon</b>. To change approved canon, propose a replacement and pick the entry it replaces. After a chapter is written, tap <b>Propose canon</b> on it: the AI proposes entries from the text, which you approve or reject here.</li>
+<li><b>Settings</b>: paste your Gemini key and tap <b>Save AI settings</b>. Tap <b>Test connection and list models</b>, tap a model, then <b>Send test message</b>. Finally switch off both <b>kill switch</b> and <b>No-AI mode</b>.</li></ol></details>
+<details><summary>2. Plan the chapters (outline)</summary><ol>
+<li>Books → open the book → <b>AI outline</b>. Start with 2 to 3 chapters; bigger requests can time out. AI Tasks shows how long each call took, which tells you your own limit. Tap <b>Generate outline</b>.</li>
+<li>Open <b>AI Tasks</b>. When it says done, tap <b>Apply outline</b>. Nothing is added until you do.</li>
+<li>Back in the book, read each chapter’s <b>Outline</b> box and edit it by hand. Tap <b>Save version</b> to keep your edits.</li>
+<li>If the book already has chapters, the new outline continues after them and uses your accepted Book State.</li></ol></details>
+<details><summary>3. Write a chapter</summary><ol>
+<li>On the chapter, tap <b>AI draft</b> and wait (up to a few minutes).</li>
+<li>Tap <b>Use draft</b>. Your previous text is kept as a version. Read it, edit it, tap <b>Save version</b>.</li>
+<li>The small line under the outline shows what the draft was built from (brief, canon facts, state entries).</li></ol></details>
+<details><summary>4. Check and approve a chapter</summary><ol>
+<li>Tap <b>Extract state</b>. Then open <b>Book State</b>: <b>Accept</b> what’s true, <b>Reject</b> what’s wrong, edit then <b>Save correction</b> to sharpen, and use <b>Add entry</b> for feelings or secrets it missed. Only accepted entries feed later chapters.</li>
+<li>On the chapter, pick a scope (start with <b>continuity</b>) and tap <b>Run check</b>.</li>
+<li>For each finding: <b>Accept</b> if real, <b>Dismiss</b> if wrong or just a preference, <b>Escalate</b> if unsure. <b>Apply fix</b> replaces only the quoted passage. <b>Resolve</b> when handled.</li>
+<li>Tap <b>Submit for review</b>, then <b>Approve</b>. Approving locks the chapter; use <b>Reopen for edits</b> to change it. It can’t be approved while a high-severity finding is open.</li></ol></details>
+<details><summary>5. Next chapters</summary><ol>
+<li>Before each new chapter, make sure the earlier one is approved, its state is reviewed, and the canon is up to date.</li>
+<li>On the new chapter’s outline, tap <b>Check against story so far</b>. It compares the outline with canon, accepted Book State and earlier chapters. Fix or dismiss each finding.</li><li>Then tap <b>AI draft</b> and repeat steps 3 and 4. After using the draft, run the same check again on the finished text.</li><li>Settings has an option to run this check automatically after an outline or draft. It uses extra calls.</li></ol></details>
+<details><summary>6. Finish the whole book</summary><ol>
+<li>When every chapter is approved, tap <b>Run manuscript audit</b> in the book and handle its findings the same way.</li>
+<li>Tap <b>Send to quality check</b>. Fix anything in red.</li>
+<li>Tap <b>Approve manuscript</b>. If editorial readiness isn’t met you can <b>Approve with override</b>; the override is recorded.</li>
+<li><b>Show export</b> gives Markdown to copy out. Unapproved books are watermarked.</li></ol></details>
+<details><summary>Story Arc (planning conflict)</summary><ul><li>Open the <b>Story Arc</b> tab and tap <b>Build arc plan</b>. It lays a standard romcom structure over your chapter count (no AI call): complications, setbacks, a midpoint reversal, a dark moment, a climax. Edit any beat, move it, or add your own direction in the box.</li><li>Outlines you generate afterwards must plan conflict for each chapter, name its cost, and may not resolve a scheduled setback or complication by the end of the chapter. Drafts get the same requirement for their chapter.</li><li>For a book that is already partly written, mark each beat in the written chapters <b>Delivered</b> or <b>Missed</b>, then tap <b>Re-plan</b>. Missed beats move to the chapters still to come.</li><li><b>Check the arc against my chapters</b> uses one AI call to flag beats that were not delivered, neat solutions with no cost, and dropped conflicts.</li><li>The cadence line warns if more than two chapters in a row have no planned setback or complication.</li></ul></details>
+<details><summary>Canon tools (Series Bible)</summary><ul><li><b>Draft canon from the brief</b> uses one AI call to propose characters, places, timeline and technical facts. Anything it invents is marked “ASSUMPTION:”. Review, edit, and approve.</li><li><b>Paste entries</b>: one per line as <b>type | Subject — attribute | value</b>, for example <b>character | Lena Hart — age | 32</b>. They arrive as proposals.</li><li><b>Approve all proposed</b> approves everything eligible in one tap and skips conflicts, which you review one by one.</li><li>Name entries “Subject — attribute” so contradictions (same name, different value) are caught exactly by the app, with no AI.</li><li>The coverage line tells you which basic categories are still thin.</li></ul></details>
+<details><summary>Autopilot and Review inbox</summary><ul><li>Open the <b>Autopilot</b> tab. Pick how many chapters (1 to 4) and which optional steps to run, then tap <b>Start autopilot</b>.</li><li>For each chapter that already has an outline it can: check the outline, write the draft, run a continuity check, run an editorial check, and propose Book State and canon. It only fills <b>empty</b> chapters, never approves anything, and pauses with the reason if a step fails. <b>Resume</b> continues where it stopped.</li><li>Keep the app open while it runs. If the phone sleeps or the app closes, it pauses; tap Resume.</li><li>When it finishes, the <b>Review inbox</b> shows each chapter with its open findings, proposed state and canon, and style flags. Use <b>Accept verified state</b>, open Book State or the Series Bible to review proposals, then <b>Approve now</b>.</li><li>Later chapters drafted in the same batch only see state you have already accepted, so review early chapters before drafting far ahead.</li></ul></details>
+<details><summary>Writing style guard</summary><ul><li>Drafts now carry style rules and a list of stock phrases to avoid, plus phrases and motifs earlier chapters already used. Edit all of it in <b>Settings → Writing style guard</b>.</li><li>On a chapter, tap <b>Scan this chapter</b> (no AI call). It lists stock phrases, overused motifs, “It wasn’t X. It was Y.” patterns, repeated phrases, and repeats from other chapters.</li><li>Tap <b>Rewrite flagged sentences (AI)</b> to get replacement sentences as findings. Use <b>Apply fix</b> on the ones you like.</li><li>It’s a craft tool, not a disguise. Check each platform’s rules on disclosing AI-generated text before you publish.</li></ul></details>
+<details><summary>Shortcuts and automation</summary><ul><li>Every chapter shows a <b>Next:</b> line telling you the next sensible step.</li><li><b>Approve now</b> submits and approves in one tap. The same safety rules apply: it refuses if the chapter is empty or has an open high-severity finding.</li><li><b>Full review</b> runs the continuity check, an editorial check, state extraction and canon proposals in one go (about 4 AI calls).</li><li>Settings has two optional automatic modes, both off by default: a continuity check after an outline or draft, and Book State plus canon proposals after a chapter is approved. They only create proposals; you still accept or reject everything.</li><li>Quotes joined with “...” are now checked piece by piece, so fewer false “not found verbatim” flags.</li></ul></details>
+<details><summary>What the messages mean</summary><ul><li>A short message appears at the top after every button: <b>✓</b> done, <b>⚠</b> something is wrong (it says what), <b>•</b> started or for your information, <b>⏳</b> waiting (it says why). Tap a message to dismiss it.</li><li>While an AI task runs, a pulsing <b>AI working…</b> shows at the top. Wait for the ✓ or ⚠ message before tapping again; repeat taps are ignored for identical tasks.</li></ul></details>
+<details><summary>7. Keep your work safe</summary><ul>
+<li>Settings → <b>Show backup JSON</b> → copy it somewhere outside the app. Do this after each approved chapter.</li>
+<li>To restore: paste the backup into the box and tap <b>Restore from box</b>. Your API key is never in a backup.</li>
+<li><b>Never clear site data or storage</b> for this app. That erases your book.</li>
+<li>To update the app: replace the files in your GitHub repo, then close and reopen the app. Your data stays. Settings shows the build label so you can confirm.</li></ul></details>
+<details><summary>8. If something goes wrong</summary><ul>
+<li><b>Failed to fetch / unreachable</b>: tap Send test message in Settings. Try the other network (Wi-Fi or mobile data). Try the Streaming checkbox on or off.</li>
+<li><b>No reply in N s</b>: use fewer chapters, or raise the timeout in Settings.</li>
+<li><b>HTTP 404</b>: wrong model. Use Test connection and pick one from the list.</li>
+<li><b>HTTP 403</b>: key rejected or restricted. <b>HTTP 429</b>: quota hit; the app pauses for 10 minutes.</li>
+<li><b>Text shows {"continuation": …</b>: tap <b>Repair JSON text</b> on the chapter (older builds pasted the raw reply).</li><li><b>Cut off at the output limit</b>: raise Max output tokens in Settings, then tap <b>Continue draft</b> on the chapter and use the continuation.</li><li><b>Invalid response</b>: the model replied in the wrong format. Tap Run again.</li>
+<li><b>“AI unavailable”</b> in AI Tasks: it tells you why (kill switch, No-AI mode, no key, daily limit, cooldown).</li>
+<li><b>Can’t add a chapter</b>: approve the brief first. <b>Can’t approve</b>: it names what’s blocking; usually an open high-severity finding.</li></ul></details>
+<details><summary>9. Costs and limits</summary><ul>
+<li>Every AI task is one or more calls. The daily limit in Settings caps them; free quota from Google is unknown, so check your Google account.</li>
+<li>Free quotas are usually counted per model per day. Set a <b>backup model</b> in Settings and the app switches to it automatically when the main model reaches its daily quota, then goes back when the pause ends.</li><li>The app never switches to a paid service by itself. The kill switch stops all AI calls instantly.</li>
+<li>AI Tasks shows tokens reported by Google separately from the app’s own estimates.</li></ul></details>
+<p class="mute">This guide describes the current build. If a button here isn’t on your screen, update the app.</p>
+</div></div>
+
+<script>
+"use strict";
+/* ---------- Config: workflow tables (deterministic; no LLM decides state) ---------- */
+const CH_FLOW={draft:{submit:"review"},review:{approve:"approved",reject:"draft"},approved:{reopen:"review"}};
+const BK_FLOW={drafting:{to_qa:"qa"},qa:{back_to_drafting:"drafting",approve:"approved"},approved:{revoke:"qa"}};
+const VIEWS=[["overview","Overview"],["pens","Pen names"],["series","Series"],["books","Books"],["auto","Autopilot"],["studio","Story Studio"],["arc","Story Arc"],["bible","Series Bible"],["state","Book State"],["tasks","AI Tasks"],["log","History"],["settings","Settings"]];
+const PLANNED=["Market","Writer’s Room","Editorial","Publishing","Analytics"];
+const SCHEMA=1;
+
+/* ---------- State + persistence (IndexedDB, falls back to memory) ---------- */
+const blank=()=>({schema:SCHEMA,pens:[],series:[],books:[],chapters:[],versions:[],approvals:[],briefs:[],canon:[],tasks:[],findings:[],state:[],autopilot:null,arcs:[],log:[],settings:{noAI:true,kill:true,paid:false,tol:15,provider:"gemini",model:"gemini-2.5-flash",limit:20,maxOut:12000,retries:2,autoCont:false,autoPost:false,coolUntil:"",timeoutMs:180000,backoffMs:1000}});
+let S=blank(),db=null,storeOK=false,view="overview",bookId=null,msg="";
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const id=p=>p+"_"+(crypto.randomUUID?crypto.randomUUID().slice(0,8):Math.random().toString(36).slice(2,10));
+const now=()=>new Date().toISOString();
+const wc=t=>(t||"").trim().split(/\s+/).filter(Boolean).length;
+
+function openDB(){return new Promise((res,rej)=>{try{const r=indexedDB.open("inkforge",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
+async function load(){try{db=await openDB();const v=await new Promise((res,rej)=>{const q=db.transaction("kv").objectStore("kv").get("state");q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});if(v){S=migrate(v)}storeOK=true}catch(e){storeOK=false}paintStore()}
+function migrate(v){const b=blank();const o=Object.assign(b,v);o.settings=Object.assign(b.settings,v.settings||{});if(o.settings.timeoutMs===60000)o.settings.timeoutMs=180000;if(o.settings.maxOut===6000)o.settings.maxOut=12000;if(o.autopilot&&o.autopilot.status==="running"){o.autopilot.status="paused";o.autopilot.note="Interrupted by a reload. Tap Resume."}o.schema=SCHEMA;o.tasks.forEach(t=>{if(t.status==="running"){t.status="queued";t.error="Interrupted by a page reload. Run again."}});return o}
+function save(){if(!db){return}try{db.transaction("kv","readwrite").objectStore("kv").put(JSON.parse(JSON.stringify(S)),"state")}catch(e){storeOK=false;paintStore()}}
+function paintStore(){const e=$("#store");e.textContent=storeOK?"saved on this device":"storage unavailable – data lost on close";e.className="tag "+(storeOK?"ok":"err")}
+function log(kind,detail,ref){S.log.unshift({id:id("log"),at:now(),kind,detail,ref:ref||null});S.log=S.log.slice(0,500)}
+function commit(){save();render()}
+
+/* ---------- Domain logic ---------- */
+function chaptersOf(b){return S.chapters.filter(c=>c.bookId===b).sort((a,c)=>a.number-c.number)}
+function chTransition(c,act){
+  const to=(CH_FLOW[c.status]||{})[act];if(!to)return"Action “"+act+"” is not allowed from “"+c.status+"”.";
+  if(act==="submit"||act==="approve"){if(!wc(c.text))return"Chapter is empty."}
+  if(act==="approve"){const n=openHigh(c.id);if(n)return n+" unresolved high-severity finding(s). Resolve or dismiss them first."}
+  const from=c.status;c.status=to;c.updated=now();
+  if(act==="approve")S.approvals.push({id:id("apr"),kind:"chapter",ref:c.id,at:now(),version:c.version});
+  log("chapter."+act,c.title+": "+from+" → "+to,c.id);return""}
+function qa(bk){
+  const cs=chaptersOf(bk.id),errs=[],warns=[];
+  if(!cs.length)errs.push("Book has no chapters.");
+  cs.forEach((c,i)=>{
+    if(c.number!==i+1)errs.push("Chapter order: expected number "+(i+1)+" but found "+c.number+" (“"+c.title+"”).");
+    if(!wc(c.text))errs.push("Chapter "+c.number+" is empty.");
+    if(c.status!=="approved")errs.push("Chapter "+c.number+" is not approved (status: "+c.status+").");
+  });
+  const hf=S.findings.filter(f=>f.bookId===bk.id&&f.severity==="high"&&["open","accepted","escalated"].includes(f.status)).length;if(hf)errs.push(hf+" unresolved high-severity finding(s).");
+  const seen=new Map();
+  cs.forEach(c=>(c.text||"").split(/\n{2,}/).map(p=>p.trim()).filter(p=>p.length>=40).forEach(p=>{const k=p.toLowerCase();if(seen.has(k)&&seen.get(k)!==c.number)warns.push("Duplicate paragraph in chapters "+seen.get(k)+" and "+c.number+": “"+p.slice(0,50)+"…”");else if(seen.has(k))warns.push("Repeated paragraph inside chapter "+c.number+": “"+p.slice(0,50)+"…”");else seen.set(k,c.number)}));
+  const tot=cs.reduce((n,c)=>n+wc(c.text),0);
+  if(bk.target&&tot){const d=Math.abs(tot-bk.target)/bk.target*100;if(d>S.settings.tol)warns.push("Word count "+tot+" is "+d.toFixed(0)+"% from target "+bk.target+" (tolerance "+S.settings.tol+"%).")}
+  return{errs,warns,tot}}
+function bkTransition(b,act,force){
+  const to=(BK_FLOW[b.status]||{})[act];if(!to)return"Action “"+act+"” is not allowed from “"+b.status+"”.";
+  if(act==="to_qa"&&!chaptersOf(b.id).length)return"Add at least one chapter first.";
+  if(act==="approve"){const r=qa(b);if(r.errs.length)return"Quality gate failed: "+r.errs[0]+(r.errs.length>1?" (+"+(r.errs.length-1)+" more)":"")}
+  const unmet=act==="approve"?readiness(b):[];if(unmet.length&&!force)return"Editorial readiness not met: "+unmet[0]+(unmet.length>1?" (+"+(unmet.length-1)+" more)":"")+". Use “Approve with override” to record an override.";
+  const from=b.status;b.status=to;
+  if(act==="approve")S.approvals.push({id:id("apr"),kind:"book",ref:b.id,at:now(),chapters:chaptersOf(b.id).map(c=>c.id+"@v"+c.version),override:unmet.length>0,unmet});
+  log("book."+act,b.title+": "+from+" → "+to,b.id);return""}
+function manuscript(b){
+  const pen=S.pens.find(p=>p.id===(S.series.find(s=>s.id===b.seriesId)||{}).penId);
+  let o=(b.status==="approved"?"":"[UNAPPROVED DRAFT – NOT FOR PUBLICATION]\n\n")+"# "+b.title+"\n"+(pen?"by "+pen.name+"\n":"")+"\n";
+  chaptersOf(b.id).forEach(c=>{o+="## Chapter "+c.number+": "+String(c.title).replace(/^\s*chapter\s+\d+\s*[:.\u2013\u2014-]\s*/i,"")+"\n\n"+(c.text||"").trim()+"\n\n"});return o}
+
+/* ---------- Phase 2: story brief + canon ---------- */
+let selBook="",selSeries="";
+const BRIEF=[["audience","Target readership","s",1],["genre","Genre and subgenre","s",1],["tone","Tone","s"],["heat","Heat level","s"],["premise","Core premise","t",1],["pairing","Romantic pairing","s",1],["motivations","Character motivations","t"],["flaws","Character flaws","t"],["conflict","Central conflict","t",1],["stakes","External stakes","t"],["internal","Internal emotional conflicts","t"],["progression","Relationship progression","t"],["beats","Major plot beats","t"],["pov","Point of view","s",1],["tense","Narrative tense","s",1],["length","Target length (words)","s"],["ending","Ending requirements","t",1],["seriesLinks","Series connections","t"],["boundaries","Content boundaries","t"],["continuity","Continuity restrictions","t"],["positioning","Commercial positioning","t",1],["differentiation","Differentiation hypothesis","t"]];
+const briefsOf=b=>S.briefs.filter(x=>x.bookId===b).sort((a,c)=>c.version-a.version);
+const approvedBrief=b=>briefsOf(b).find(x=>x.status==="approved");
+function readBrief(br){BRIEF.forEach(f=>{const e=$("#bf_"+f[0]);if(e)br.fields[f[0]]=e.value})}
+const CANON_FLOW={proposed:{approve:"approved",reject:"rejected"},approved:{flag:"contradicted",supersede:"superseded"},contradicted:{approve:"approved",supersede:"superseded"}};
+const CTYPES=["character","location","relationship","timeline","fact","thread"];
+const norm=t=>(t||"").trim().toLowerCase().replace(/\s+/g," ");
+const sameKey=(a,b)=>a.seriesId===b.seriesId&&a.type===b.type&&norm(a.name)===norm(b.name)&&norm(a.desc)!==norm(b.desc);
+function contradictions(sid){const live=S.canon.filter(c=>c.seriesId===sid&&(c.status==="proposed"||c.status==="approved"));const out=[];for(let i=0;i<live.length;i++)for(let j=i+1;j<live.length;j++){const a=live[i],b=live[j];if(sameKey(a,b)&&a.supersedes!==b.id&&b.supersedes!==a.id)out.push([a,b])}return out}
+function canonTransition(c,act){
+  const to=(CANON_FLOW[c.status]||{})[act];if(!to)return"Not allowed from “"+c.status+"”.";
+  if(act==="approve"){const x=S.canon.find(o=>o.id!==c.id&&o.status==="approved"&&sameKey(o,c)&&c.supersedes!==o.id);if(x)return"Conflicts with approved canon "+x.id+". Re-propose this as a replacement of that entry.";
+    if(c.supersedes){const o=S.canon.find(y=>y.id===c.supersedes);if(o&&o.status!=="superseded"){o.status="superseded";o.version++;log("canon.supersede",o.name+" replaced by "+c.id,o.id)}}}
+  const from=c.status;c.status=to;c.version++;
+  if(act==="approve")S.approvals.push({id:id("apr"),kind:"canon",ref:c.id,at:now(),version:c.version});
+  log("canon."+act,c.name+": "+from+" → "+to,c.id);return""}
+
+function vStudio(){
+  if(!S.books.length)return'<p class="mute">Create a book first.</p>';
+  if(!S.books.find(b=>b.id===selBook))selBook=S.books[0].id;
+  const br=briefsOf(selBook)[0];
+  let h='<div class="card"><label>Book</label><select id="sb">'+opts(S.books,selBook,b=>b.title)+'</select><p class="mute">Concept generation needs an AI provider, which this build does not have. Enter the concept by hand.</p></div>'+(msg?'<p class="err">'+esc(msg)+'</p>':'');
+  if(!br)return h+'<button class="btn" data-a="newBrief">Start story brief</button>';
+  const lock=br.status!=="draft";
+  h+='<div class="card"><div class="row sp"><h3>Brief v'+br.version+'</h3>'+tag(br.status)+'</div>';
+  BRIEF.forEach(f=>{const v=br.fields[f[0]]||"";h+='<label>'+f[1]+(f[3]?" (required)":"")+'</label>'+(f[2]==="t"?'<textarea id="bf_'+f[0]+'" style="min-height:80px"'+(lock?" readonly":"")+'>'+esc(v)+'</textarea>':'<input id="bf_'+f[0]+'" value="'+esc(v)+'"'+(lock?" readonly":"")+'>')});
+  h+='<div class="row" style="margin-top:10px">'+(lock?'<button class="btn" data-a="reviseBrief">Start new version</button>':'<button class="btn alt" data-a="saveBrief">Save draft</button><button class="btn" data-a="approveBrief">Approve brief</button>')+'</div>'+(lock?'<p class="mute">Approved briefs are locked. Later stages use this version until you approve a newer one.</p>':'')+'</div>';
+  return h}
+
+function vBible(){
+  if(!S.series.length)return'<p class="mute">Create a series first.</p>';
+  if(!S.series.find(s=>s.id===selSeries))selSeries=S.series[0].id;
+  const cs=S.canon.filter(c=>c.seriesId===selSeries),ap=cs.filter(c=>c.status==="approved");
+  let h='<div class="card"><label>Series</label><select id="sbs">'+opts(S.series,selSeries,s=>s.name)+'</select></div>'+(msg?'<p class="err">'+esc(msg)+'</p>':'');
+  h+='<div class="card"><h3>Propose entry</h3><label>Type</label><select id="ct">'+CTYPES.map(t=>'<option>'+t+'</option>').join('')+'</select><label>Name</label><input id="cn"><label>Description</label><textarea id="cd" style="min-height:70px"></textarea><label>Source (brief, chapter 3, …)</label><input id="cs"><label>Replaces approved entry (optional)</label><select id="cr"><option value="">None</option>'+opts(ap,"",c=>c.type+": "+c.name)+'</select><p><button class="btn" data-a="addCanon">Propose</button></p></div>';
+  h+=bibleTools();const cx=contradictions(selSeries);
+  if(cx.length)h+='<div class="card"><h3 class="warn">Possible contradictions</h3><ul>'+cx.map(p=>'<li>'+esc(p[0].type+": "+p[0].name)+' has two descriptions: '+p[0].id+' (“'+esc(p[0].desc.slice(0,60))+'”) vs '+p[1].id+' (“'+esc(p[1].desc.slice(0,60))+'”)</li>').join('')+'</ul><p class="mute">Name-and-type match with different text. This is a deterministic check, not a semantic one.</p></div>';
+  const L={approve:"Approve as canon",reject:"Reject",flag:"Mark contradicted",supersede:"Mark superseded"};
+  h+=cs.length?cs.map(c=>'<div class="card"><div class="row sp">'+(c.status==="proposed"?'<input id="ce_n_'+c.id+'" value="'+esc(c.name)+'" style="font-weight:600">':"<h3>"+esc(c.name)+"</h3>")+tag(c.status)+'</div><p class="mute">'+esc(c.type)+' · '+c.id+' · v'+c.version+(c.source?' · source: '+esc(c.source):'')+(c.supersedes?' · replaces '+c.supersedes:'')+'</p>'+(c.status==="proposed"?'<textarea id="ce_d_'+c.id+'" style="min-height:80px">'+esc(c.desc)+"</textarea>":"<p>"+esc(c.desc)+"</p>")+(c.quote?'<p class="mute">“'+esc(c.quote)+'”'+(c.quoteFound?"":" (not found verbatim)")+"</p>":"")+'<div class="row">'+Object.keys(CANON_FLOW[c.status]||{}).map(a=>'<button class="btn'+(a==="approve"?"":" alt")+'" data-a="canon" data-act="'+a+'" data-id="'+c.id+'">'+L[a]+'</button>').join('')+(c.status==="proposed"?'<button class="btn alt" data-a="editCanon" data-id="'+c.id+'">Save edit</button><button class="btn alt" data-a="delCanon" data-id="'+c.id+'">Delete</button>':'')+'</div></div>').join(''):'<p class="mute">No entries yet. Propose characters, locations, facts and open threads, or tap Propose canon on a written chapter.</p>';
+  return h}
+
+/* ---------- Phase 3: provider router, tasks, outlines, drafts ---------- */
+const KEYNAME="inkforge_provider_key",ctl={};
+const getKey=()=>{try{return localStorage.getItem(KEYNAME)||""}catch(e){return""}};
+const cyrb=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
+const PROMPTS={editorial:{v:"editorial.1",sys:"You are a careful fiction editor. Reply with ONLY a JSON array, no markdown fences and no commentary."},outline:{v:"outline.1",sys:"You are a developmental planner for commercial fiction. Reply with ONLY a JSON array, no markdown fences and no commentary."},draft:{v:"draft.1",sys:"You are a fiction author drafting one chapter. Reply with the chapter prose only: no headings, no commentary, no notes."}};
+const OKEYS=[["pov","POV"],["purpose","Purpose"],["start","Starting state"],["events","Events"],["decisions","Decisions"],["beats","Emotional beats"],["progression","Relationship progression"],["arcBeat","Arc beat"],["conflict","Conflict"],["cost","Cost to the leads"],["end","Ending state"],["refs","Continuity refs"],["target","Target words"]];
+const fmtOutline=o=>OKEYS.filter(k=>o[k[0]]).map(k=>k[1]+": "+o[k[0]]).join("\n");
+const canonText=sid=>S.canon.filter(c=>c.seriesId===sid&&c.status==="approved").map(c=>"- ["+c.type+"] "+c.name+": "+c.desc).join("\n").slice(0,6000)||"(none approved)";
+const briefText=br=>BRIEF.map(f=>f[1]+": "+(br.fields[f[0]]||"")).join("\n");
+const callsToday=()=>S.tasks.reduce((n,t)=>n+t.calls.filter(c=>c.at.slice(0,10)===now().slice(0,10)).length,0);
+/* Provider adapter: all Gemini specifics live here. Not verified against the live API. */
+async function httpErr(r){const e=new Error("HTTP "+r.status);e.status=r.status;try{const j=await r.json(),x=j.error||j,all=JSON.stringify(x);e.detail=String(x.message||"").slice(0,300);const m=all.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);if(m)e.retryS=Math.ceil(+m[1]);e.daily=/per\s*day|PerDay/i.test(all)}catch(z){}return e}
+const PROVIDERS={gemini:{async call({key,model,system,prompt,maxOut,json,signal,stream}){
+  const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+(stream?":streamGenerateContent?alt=sse":":generateContent"),{method:"POST",signal,headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:Object.assign({maxOutputTokens:maxOut},json?{responseMimeType:"application/json"}:{})})});
+  if(!r.ok)throw await httpErr(r);
+  const pick=d=>(((d.candidates||[])[0]||{}).content||{}).parts||[],fmt=u=>u&&u.totalTokenCount!=null?{prompt:u.promptTokenCount,output:u.candidatesTokenCount,total:u.totalTokenCount}:null;
+  if(!stream){const d=await r.json();return{text:pick(d).map(x=>x.text||"").join(""),usage:fmt(d.usageMetadata),finish:((d.candidates||[])[0]||{}).finishReason||""}}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",text="",u=null,fin="";
+  const eat=line=>{line=line.trim();if(line.indexOf("data:")!==0)return;let d;try{d=JSON.parse(line.slice(5))}catch(e){return}if(d.error){const e=new Error("HTTP "+(d.error.code||500));e.status=d.error.code||500;throw e}text+=pick(d).map(x=>x.text||"").join("");if(d.usageMetadata)u=d.usageMetadata;fin=((d.candidates||[])[0]||{}).finishReason||fin};
+  for(;;){const x=await rd.read();if(x.done)break;buf+=dec.decode(x.value,{stream:true});let i;while((i=buf.indexOf("\n"))>=0){eat(buf.slice(0,i));buf=buf.slice(i+1)}}
+  eat(buf);return{text,usage:fmt(u),finish:fin}},
+  async list({key,signal}){const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{signal,headers:{"x-goog-api-key":key}});
+    if(!r.ok)throw await httpErr(r);
+    const d=await r.json();return(d.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>({id:String(m.name||"").replace(/^models\//,""),label:m.displayName||""}))}}};
+let modelList=null,modelMsg="";
+function describeErr(e){const h={400:"bad request or invalid key",401:"key rejected",403:"key rejected or restricted (check the referrer restriction and that the Generative Language API is enabled)",404:"not found",503:"model overloaded, try again shortly or pick another model",429:"quota or rate limit"};
+  return e.status?"Google answered HTTP "+e.status+" ("+(h[e.status]||"error")+")."+(e.detail?" Google says: "+e.detail:""):"No response from Google ["+(e.name||"Error")+": "+(e.message||"")+"]. Likely a network or content-blocker problem, or a bad character in the key."}
+function modelBox(){let h=(msg?'<p class="err">'+esc(msg)+"</p>":"")+(modelMsg?'<p class="'+(modelList?"ok":/^(Sending|Checking|Normal)/.test(modelMsg)?"mute":"err")+'">'+esc(modelMsg).replace(/\n/g,"<br>")+"</p>":"");
+  if(modelList&&modelList.length)h+='<p class="mute">Tap a model id to use it.</p><select id="pickTarget" style="margin-bottom:8px"><option value="main">Tapping sets the main model</option><option value="backup">Tapping sets the backup model</option></select><div class="row">'+modelList.map(m=>'<button class="btn alt" data-a="pickModel" data-m="'+esc(m.id)+'">'+esc(m.id)+"</button>").join("")+"</div>";return h}
+function ineligible(){const s=S.settings;if(s.kill)return"Global AI kill switch is on.";if(s.noAI)return"No-AI mode is on.";if(!getKey())return"No API key set (Settings).";if(callsToday()>=s.limit)return"Daily call limit ("+s.limit+") reached.";if(activeModel()===null){const u=(s.coolModels||{})[s.model]||s.coolUntil;return"Provider cooling down until "+String(u).slice(11,16)+" UTC."}return""}
+function classify(e){if(e.name==="AbortError")return"cancelled";const s=e.status;if(!s)return"transient";if(s===429)return"quota";if(s>=500)return"transient";if(s===401||s===403)return"auth";return"permanent"}
+function validate(t,text){
+  if(t.kind==="canon"||t.kind==="bible"){let v;try{v=JSON.parse(text.trim().replace(/^```(?:json)?\s*|\s*```$/g,""))}catch(e){return{error:"Reply was not valid JSON."}}
+    if(!Array.isArray(v)||v.length>15)return{error:"Expected a JSON array of at most 15 entries."};
+    for(let i=0;i<v.length;i++){const o=v[i];if(!o||!CTYPES.includes(o.type))return{error:"Entry "+(i+1)+" has an invalid type."};for(const k of["name","description"])if(typeof o[k]!=="string"||!o[k].trim())return{error:"Entry "+(i+1)+" is missing “"+k+"”."};if(typeof o.quote!=="string")return{error:"Entry "+(i+1)+" is missing “quote”."}}
+    return{value:v}}
+  if(t.kind==="state"){let v;try{v=JSON.parse(text.trim().replace(/^```(?:json)?\s*|\s*```$/g,""))}catch(e){return{error:"Reply was not valid JSON."}}
+    if(!Array.isArray(v)||v.length>12)return{error:"Expected a JSON array of at most 12 entries."};
+    for(let i=0;i<v.length;i++){const o=v[i];if(!o||!STYPES.includes(o.type))return{error:"Entry "+(i+1)+" has an invalid type."};for(const k of["subject","description"])if(typeof o[k]!=="string"||!o[k].trim())return{error:"Entry "+(i+1)+" is missing “"+k+"”."};if(typeof o.quote!=="string")return{error:"Entry "+(i+1)+" is missing “quote”."}}
+    return{value:v}}
+  if(t.kind==="editorial"||t.kind==="audit"||t.kind==="continuity"||t.kind==="arc"){let v;try{v=JSON.parse(text.trim().replace(/^```(?:json)?\s*|\s*```$/g,""))}catch(e){return{error:"Reply was not valid JSON."}}
+    if(!Array.isArray(v)||v.length>25)return{error:"Expected a JSON array of at most 25 findings."};
+    for(let i=0;i<v.length;i++){const o=v[i];if(!o||!["high","medium","low"].includes(o.severity))return{error:"Finding "+(i+1)+" has an invalid severity."};for(const k of["category","description","action"])if(typeof o[k]!=="string"||!o[k].trim())return{error:"Finding "+(i+1)+" is missing “"+k+"”."};if(typeof o.evidence!=="string")return{error:"Finding "+(i+1)+" is missing “evidence”."}}
+    return{value:v}}
+  if(t.kind==="outline"){let v;try{v=JSON.parse(text.trim().replace(/^```(?:json)?\s*|\s*```$/g,""))}catch(e){return{error:"Reply was not valid JSON."}}
+    if(!Array.isArray(v)||!v.length||v.length>60)return{error:"Expected a JSON array of 1 to 60 chapters."};
+    for(let i=0;i<v.length;i++)for(const k of["title","purpose","events","end"].concat(t.needsConflict?["conflict"]:[]))if(!v[i]||typeof v[i][k]!=="string"||!v[i][k].trim())return{error:"Chapter "+(i+1)+" is missing “"+k+"”."};
+    return{value:v}}
+  const w=wc(text);return w<(t.kind==="continue"?10:50)?{error:"Draft is too short ("+w+" words)."}:{value:unwrapJson(text.trim())}}
+function mkTask(kind,ref,prompt){
+  const sys=PROMPTS[kind].sys,key=cyrb([kind,ref,PROMPTS[kind].v,S.settings.model,sys,prompt].join("|"));
+  const dup=S.tasks.find(t=>t.key===key&&!t.closed&&["done","queued","running"].includes(t.status));
+  if(dup){msg=dup.status==="done"?"Same inputs already produced a result. Reused it; no new call.":"An identical task is already "+dup.status+".";return null}
+  const t={id:id("task"),kind,ref,key,promptVersion:PROMPTS[kind].v,provider:S.settings.provider,model:S.settings.model,sys,prompt,status:"queued",attempts:0,calls:[],error:"",created:now(),updated:now()};
+  t.snapshot=snapOf(kind==="outline"||kind==="audit"||kind==="bible"||kind==="arc"?ref:(S.chapters.find(x=>x.id===ref)||{}).bookId);S.tasks.unshift(t);S.tasks=S.tasks.slice(0,100);log("task.create",kind,t.id);return t}
+async function runTask(t){
+  const st=S.settings,why=ineligible();
+  if(why){t.status="queued";t.error=why;t.updated=now();log("task.queued",t.kind+" – "+why,t.id);commit();toast((TLBL[t.kind]||"Task")+" is waiting: "+why,"warn");return}
+  t.status="running";t.error="";t.attempts=0;t.updated=now();t.model=activeModel()||t.model;commit();
+  const key=getKey();let extra="";
+  for(;;){
+    if(callsToday()>=st.limit){t.status="queued";t.error="Daily call limit reached.";break}
+    t.attempts++;let timedOut=false;const t0=Date.now();const c=ctl[t.id]=new AbortController(),to=setTimeout(()=>{timedOut=true;c.abort()},st.timeoutMs||60000),prompt=t.prompt+extra;
+    try{
+      const r=await PROVIDERS[st.provider].call({key,model:t.model,system:t.sys,prompt,maxOut:st.maxOut,json:!["draft","continue"].includes(t.kind),signal:c.signal,stream:st.stream!==false});clearTimeout(to);
+      t.calls.push({at:now(),ms:Date.now()-t0,finish:r.finish||"",reported:r.usage,estimated:{prompt:Math.ceil((t.sys.length+prompt.length)/4),output:Math.ceil(r.text.length/4)}});
+      if(r.finish==="MAX_TOKENS")t.truncated=true;const v=validate(t,r.text);
+      if(v.error){if(t.attempts<=st.retries){extra="\n\nYour previous reply was rejected: "+v.error+" Reply again in the required format only.";commit();continue}t.status="failed";t.error="Invalid response after "+t.attempts+" attempt(s): "+v.error+(t.truncated?" The reply was cut off at the output token limit; raise Max output tokens in Settings.":"");break}
+      t.result=v.value;t.status="done";t.error="";break}
+    catch(e){clearTimeout(to);t.lastMs=Date.now()-t0;const k=timedOut?"transient":classify(e);
+      if(k==="cancelled"){t.status="cancelled";t.error="Cancelled.";break}
+      if(k==="transient"&&t.attempts<=st.retries&&!timedOut){await new Promise(r=>setTimeout(r,(st.backoffMs||1000)*(e.status===503?5:1)*2**(t.attempts-1)));if(t.status==="cancelled")break;continue}
+      if(k==="quota"){const wait=e.daily?3600:Math.min(3600,Math.max(30,e.retryS||600));const until=new Date(Date.now()+wait*1000).toISOString();(S.settings.coolModels=S.settings.coolModels||{})[t.model]=until;const nm=activeModel();if(nm&&nm!==t.model){log("task.fallback",t.model+" is at its quota; switching to "+nm,t.id);t.model=nm;continue}S.settings.coolUntil=until;t.status="queued";t.error="Google says the quota or rate limit is reached (HTTP 429)"+(e.daily?" for the day. Paused for 1 hour. Try again after your quota resets, or switch model":". Paused for "+Math.round(wait/60)+" min")+(e.detail?" ["+e.detail+"]":"")+". Task kept.";break}
+      t.status="failed";t.error=({auth:"Key rejected (HTTP "+e.status+"). Check the API key.",permanent:"Request rejected (HTTP "+e.status+"). Check the model id."+(e.detail?" ["+e.detail+"]":""),transient:"Provider unreachable after "+t.attempts+" attempt(s) ["+(timedOut?"no reply in "+Math.round((st.timeoutMs||60000)/1000)+"s; use fewer chapters or raise the timeout in Settings":e.status===503?"HTTP 503: Google says the model is overloaded; wait a few minutes or switch model":e.message)+"]. Content is safe; try again later."})[k];break}}
+  if(t.status==="done"&&!t.ingested){if(t.kind==="editorial"||t.kind==="continuity")ingest(t);else if(t.kind==="state")ingestState(t);else if(t.kind==="audit"||t.kind==="arc")ingestAudit(t);else if(t.kind==="canon")ingestCanon(t);else if(t.kind==="bible")ingestBible(t)}delete ctl[t.id];t.updated=now();log("task."+t.status,t.kind+(t.error?" – "+t.error:""),t.id);commit();toastTask(t)}
+function draftBox(c){const t=S.tasks.find(x=>(x.kind==="draft"||x.kind==="continue")&&x.ref===c.id&&!x.closed);if(!t)return"";
+  if(t.status==="done")return'<div class="card" style="background:var(--fill)"><b>AI draft ready</b> · '+wc(t.result)+' words'+(t.kind==="continue"?" (continuation)":"")+(t.truncated?' <span class="tag err">cut off at the output limit</span>':"")+'<div class="row" style="margin-top:6px"><button class="btn" data-a="useDraft" data-id="'+t.id+'">Use draft (current text kept as a version)</button><button class="btn alt" data-a="discardDraft" data-id="'+t.id+'">Discard</button></div></div>';
+  return'<p class="mute">AI draft task: '+t.status+(t.error?" – "+esc(t.error):"")+" (see AI Tasks)</p>"}
+function tookTxt(t){const c=t.calls[t.calls.length-1];return c&&c.ms!=null?" · took "+Math.round(c.ms/1000)+"s":t.lastMs?" · gave up after "+Math.round(t.lastMs/1000)+"s":""}
+function vTasks(){const why=ineligible();
+  let h='<div class="card"><p>Calls today: <b>'+callsToday()+"</b> of "+S.settings.limit+' (UTC day). Provider free quota: <b>unknown</b> (never assumed).</p><p class="'+(why?"warn":"ok")+'">'+(why?"AI unavailable: "+esc(why):"AI eligible and ready.")+"</p>"+(why&&/cooling down/.test(why)?'<p><button class="btn alt" data-a="clearCool">Clear the pause and allow tasks to run</button></p>':"")+(activeModel()&&activeModel()!==S.settings.model?'<p class="warn">Using the backup model ('+esc(activeModel())+") because "+esc(S.settings.model)+" is paused.</p>":"")+"</div>"+(msg?'<p class="err">'+esc(msg)+"</p>":"");
+  return h+(S.tasks.length?S.tasks.map(t=>{const rep=t.calls.reduce((a,c)=>a+(c.reported?c.reported.total||0:0),0),est=t.calls.reduce((a,c)=>a+c.estimated.prompt+c.estimated.output,0),ap=t.kind==="outline"&&t.status==="done"&&!t.closed;
+    return'<div class="card"><div class="row sp"><h3>'+esc(t.kind)+" · "+t.id+"</h3>"+tag(t.status)+'</div><p class="mute">'+esc(t.provider)+" / "+esc(t.model)+" · "+t.promptVersion+" · attempts "+t.attempts+" · calls "+t.calls.length+tookTxt(t)+'</p><p class="mute">Tokens: reported '+(t.calls.some(c=>c.reported)?rep:"not reported")+" · estimated ~"+est+" (characters ÷ 4)</p>"+(t.error?'<p class="err">'+esc(t.error)+"</p>":"")+(["editorial","continuity","audit","state"].includes(t.kind)&&t.status==="done"?'<p class="mute">Result: '+t.result.length+" item(s) reported</p>":"")+'<details><summary class="mute">View what was sent</summary><textarea readonly style="min-height:160px;font-size:.8rem">'+esc(t.prompt)+"</textarea></details>"+'<div class="row">'+(["queued","failed","cancelled"].includes(t.status)?'<button class="btn" data-a="runT" data-id="'+t.id+'">Run</button>':"")+(["queued","running"].includes(t.status)?'<button class="btn alt" data-a="cancelT" data-id="'+t.id+'">Cancel</button>':"")+(ap?'<button class="btn" data-a="applyOutline" data-id="'+t.id+'">Apply outline ('+t.result.length+' chapters)</button><button class="btn alt" data-a="closeT" data-id="'+t.id+'">Discard</button>':"")+"</div>"+(ap?"<ul>"+t.result.map(o=>"<li>"+esc(o.title)+"</li>").join("")+"</ul>":"")+"</div>"}).join(""):'<p class="mute">No AI tasks yet. Generate an outline or chapter draft from a book.</p>')}
+function aiCard(){const s=S.settings;return'<div class="card"><h3>AI provider (Google Gemini API)</h3><p class="mute">Build 5B.22</p><p class="mute">The key stays in this browser only and is never put in backups or logs. When you run a task, the brief, canon and chapter text for that task go straight from your browser to Google. Free quota and terms are unknown here; check your Google account.</p><p>'+(getKey()?'<span class="tag ok">key set</span>':'<span class="tag warn">no key</span>')+'</p><label>API key (blank keeps current)</label><input id="apikey" type="password" autocomplete="off"><label>Model id (verify it exists for your key)</label><input id="amodel" value="'+esc(s.model)+'"><label>Backup model (used automatically when the main model hits its quota; blank for none)</label><input id="abackup" value="'+esc(s.backupModel||"")+'"><label>Daily call limit</label><input id="alimit" type="number" value="'+s.limit+'"><label>Max output tokens</label><input id="amax" type="number" value="'+s.maxOut+'"><label>Retries (0 to 5)</label><input id="aret" type="number" value="'+s.retries+'"><label>Request timeout (seconds)</label><input id="atimeout" type="number" value="'+Math.round((s.timeoutMs||60000)/1000)+'"><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="astream" style="width:auto"'+(s.stream!==false?" checked":"")+'> Stream replies (keeps the connection alive on slow models)</label><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="aauto" style="width:auto"'+(s.autoCont?" checked":"")+'> Run a continuity check automatically after applying an outline or using a draft (uses extra calls)</label><label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="apost" style="width:auto"'+(s.autoPost?" checked":"")+'> After a chapter is approved, propose Book State and canon automatically (2 calls; you still review them)</label><div class="row" style="margin-top:8px"><button class="btn" data-a="saveAI">Save AI settings</button><button class="btn alt" data-a="clearKey">Remove key</button></div><div class="row" style="margin-top:8px"><button class="btn alt" data-a="listModels">Test connection and list models</button><button class="btn alt" data-a="testSend">Send test message</button></div>'+modelBox()+'</div>'}
+
+/* ---------- Phase 4: editorial findings ---------- */
+const SCOPES={developmental:"story structure, pacing and scene purpose",romance:"romantic and emotional arc, chemistry and tension",continuity:"contradictions with the approved canon and brief",line:"sentence-level style and clarity",copy:"grammar, usage and consistency",proof:"typos and punctuation",voice:"voice and style consistency and repetition"};
+const FIND_FLOW={open:{accept:"accepted",dismiss:"dismissed",escalate:"escalated",resolve:"resolved"},accepted:{resolve:"resolved",dismiss:"dismissed"},escalated:{accept:"accepted",dismiss:"dismissed",resolve:"resolved"}};
+const openHigh=cid=>S.findings.filter(f=>f.chapterId===cid&&f.severity==="high"&&["open","accepted","escalated"].includes(f.status)).length;
+function fTransition(f,act){const to=(FIND_FLOW[f.status]||{})[act];if(!to)return"Not allowed from “"+f.status+"”.";f.status=to;log("finding."+act,f.category+" → "+to,f.id);return""}
+function ingest(t){const c=S.chapters.find(x=>x.id===t.ref);if(!c)return;const h=cyrb(c.text);
+  t.result.forEach(o=>{const ev=String(o.evidence||"").trim(),found=!!ev&&(quoteIn(c.text,ev)||quoteIn(c.outline||"",ev));S.findings.push({id:id("fnd"),chapterId:c.id,bookId:c.bookId,taskId:t.id,scope:t.scope||"",severity:o.severity,category:String(o.category),desc:String(o.description),evidence:ev,evidenceFound:found,replacement:o.replacement?String(o.replacement):"",action:String(o.action),confidence:typeof o.confidence==="number"?o.confidence:null,textHash:h,status:"open",needsHuman:o.severity==="high"||!found,created:now()})});
+  t.ingested=true;log("findings.ingest",t.result.length+" finding(s) for "+c.title,t.id)}
+function findBox(c){const fs=S.findings.filter(f=>f.chapterId===c.id&&f.status!=="dismissed"&&f.status!=="resolved"),h=cyrb(c.text),t=S.tasks.find(x=>x.kind==="editorial"&&x.ref===c.id&&["queued","running","failed"].includes(x.status));
+  let o='<div class="card" style="background:var(--fill)"><h3>Editorial</h3>'+(c.status==="approved"?"":'<div class="row"><select id="es_'+c.id+'" style="width:auto">'+Object.keys(SCOPES).map(k=>"<option>"+k+"</option>").join("")+'</select><button class="btn alt" data-a="genEdit" data-id="'+c.id+'">Run check</button><button class="btn alt" data-a="genCont" data-id="'+c.id+'">Check against story so far</button><button class="btn alt" data-a="fullReview" data-id="'+c.id+'">Full review (about 4 calls)</button></div>')+(t?'<p class="mute">Check '+t.status+(t.error?" – "+esc(t.error):"")+" (see AI Tasks)</p>":"");
+  const lt=S.tasks.find(x=>(x.kind==="editorial"||x.kind==="continuity")&&x.ref===c.id&&x.status==="done");if(lt)o+='<p class="mute">Last check ('+esc(lt.scope||lt.kind)+"): "+(lt.result.length?lt.result.length+" finding(s) reported":"no findings reported")+" · "+lt.updated.slice(11,16)+" UTC</p>";return o+(fs.length?fs.map(f=>'<div style="border-top:1px solid var(--line);padding:6px 0"><span class="tag '+(f.severity==="high"?"err":f.severity==="medium"?"warn":"")+'">'+f.severity+'</span> <span class="tag">'+esc(f.category)+'</span> <span class="tag">'+f.status+"</span>"+(f.textHash!==h?' <span class="tag warn">text changed since</span>':"")+"<p>"+esc(f.desc)+"</p>"+(f.evidence?'<p class="mute">Passage: “'+esc(f.evidence)+"”"+(f.evidenceFound?"":" (not found verbatim in the chapter)")+"</p>":"")+'<p class="mute">Suggested: '+esc(f.action)+(f.confidence!=null?" · confidence "+f.confidence:"")+'</p>'+(f.replacement?'<p class="mute">Replacement: “'+esc(f.replacement)+"”</p>":"")+'<div class="row">'+Object.keys(FIND_FLOW[f.status]||{}).map(a=>'<button class="btn alt" data-a="finding" data-act="'+a+'" data-id="'+f.id+'">'+a[0].toUpperCase()+a.slice(1)+"</button>").join("")+(f.replacement&&f.evidenceFound&&(c.text.includes(f.evidence)||(c.outline||"").includes(f.evidence))&&c.status!=="approved"?'<button class="btn" data-a="fixF" data-id="'+f.id+'">Apply fix</button>':"")+"</div></div>").join(""):'<p class="mute">No open findings.</p>')+"</div>"}
+
+/* ---------- Phase 5A: snapshots, book state, audit, readiness ---------- */
+const STYPES=["knowledge","goal","relationship","emotion","thread","promise","secret","object","timeline"];
+const SFLOW={proposed:{accept:"accepted",reject:"rejected"},accepted:{resolve:"resolved",reject:"rejected"},resolved:{reopen:"accepted"}};
+PROMPTS.state={v:"state.1",sys:"You are a continuity editor extracting story state. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+PROMPTS.audit={v:"audit.1",sys:"You are a senior developmental editor auditing a whole manuscript. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+const snapOf=bid=>{const b=S.books.find(x=>x.id===bid)||{},br=approvedBrief(bid);return{at:now(),brief:br?br.id+"@v"+br.version:null,canon:S.canon.filter(c=>c.seriesId===b.seriesId&&c.status==="approved").map(c=>c.id+"@v"+c.version),state:S.state.filter(s=>s.bookId===bid&&s.status==="accepted").map(s=>s.id+"@v"+s.version)}};
+const stateText=(bid,before)=>{const num=i=>(S.chapters.find(c=>c.id===i)||{}).number;return S.state.filter(s=>s.bookId===bid&&s.status==="accepted"&&(!s.chapterId||num(s.chapterId)<before)).map(s=>"- ["+s.type+"] "+s.subject+": "+s.desc).join("\n").slice(0,5000)||"(none recorded)"};
+function ingestState(t){const c=S.chapters.find(x=>x.id===t.ref);if(!c)return;
+  t.result.forEach(o=>{const q=o.quote.trim();S.state.push({id:id("st"),bookId:c.bookId,type:o.type,subject:o.subject,desc:o.description,chapterId:c.id,quote:q,quoteFound:quoteIn(c.text,q),origin:"ai",status:"proposed",version:1,taskId:t.id,created:now()})});
+  t.ingested=true;log("state.ingest",t.result.length+" proposed entries from "+c.title,t.id)}
+function ingestAudit(t){const b=S.books.find(x=>x.id===t.ref);if(!b)return;const cs=chaptersOf(b.id);
+  t.result.forEach(o=>{const ev=String(o.evidence||"").trim(),found=!!ev&&cs.some(c=>quoteIn(c.text,ev));S.findings.push({id:id("fnd"),chapterId:"",bookId:b.id,taskId:t.id,scope:t.kind==="arc"?"arc":"audit",severity:o.severity,category:String(o.category),desc:String(o.description),evidence:ev,evidenceFound:found,replacement:"",action:String(o.action),confidence:typeof o.confidence==="number"?o.confidence:null,textHash:t.textHash||"",status:"open",needsHuman:true,created:now()})});
+  t.ingested=true;log("audit.ingest",t.result.length+" book-level finding(s)",t.id)}
+function readiness(b){const cs=chaptersOf(b.id),m=[];
+  cs.forEach(c=>{const h=cyrb(c.text||"");if(!S.tasks.some(t=>t.kind==="editorial"&&t.ref===c.id&&t.status==="done"&&t.textHash===h))m.push("Chapter "+c.number+" has no editorial check on its current text.")});
+  const mh=cyrb(cs.map(c=>c.text).join("\u0001"));if(cs.length&&!S.tasks.some(t=>t.kind==="audit"&&t.ref===b.id&&t.status==="done"&&t.textHash===mh))m.push("No manuscript audit on the current text.");
+  const mid=S.findings.filter(f=>f.bookId===b.id&&f.severity==="medium"&&f.status==="open").length;if(mid)m.push(mid+" medium finding(s) still open.");return m}
+function srcLine(c){const x=c.source;if(!x)return"";const sn=x.snapshot||{};return'<p class="mute">Last AI draft used brief '+esc(sn.brief||"?")+", "+(sn.canon||[]).length+" canon facts, "+(sn.state||[]).length+" state entries · "+esc(x.model||"")+" · "+esc(x.promptVersion||"")+"</p>"}
+function auditBox(b){const m=readiness(b),fs=S.findings.filter(f=>f.bookId===b.id&&f.scope==="audit"&&!["dismissed","resolved"].includes(f.status));
+  return'<div class="card"><h3>Editorial readiness</h3>'+(m.length?'<ul class="warn">'+m.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":'<p class="ok">All readiness checks met.</p>')+'<p class="mute">Workflow compliance (the quality check above) and editorial readiness are separate. Approving without readiness needs an override, which is recorded.</p><p><button class="btn alt" data-a="genAudit" data-id="'+b.id+'">Run manuscript audit</button></p>'+fs.map(f=>'<div style="border-top:1px solid var(--line);padding:6px 0"><span class="tag '+(f.severity==="high"?"err":f.severity==="medium"?"warn":"")+'">'+f.severity+'</span> <span class="tag">'+esc(f.category)+'</span> <span class="tag">'+f.status+"</span><p>"+esc(f.desc)+"</p>"+(f.evidence?'<p class="mute">Passage: “'+esc(f.evidence)+"”"+(f.evidenceFound?"":" (not found verbatim)")+"</p>":"")+'<p class="mute">Suggested: '+esc(f.action)+'</p><div class="row">'+Object.keys(FIND_FLOW[f.status]||{}).map(a=>'<button class="btn alt" data-a="finding" data-act="'+a+'" data-id="'+f.id+'">'+a[0].toUpperCase()+a.slice(1)+"</button>").join("")+"</div></div>").join("")+"</div>"}
+function vState(){
+  if(!S.books.length)return'<p class="mute">Create a book first.</p>';
+  if(!S.books.find(b=>b.id===selBook))selBook=S.books[0].id;
+  const cs=chaptersOf(selBook),num=i=>(cs.find(c=>c.id===i)||{}).number,es=S.state.filter(s=>s.bookId===selBook);
+  let h='<div class="card"><label>Book</label><select id="sb">'+opts(S.books,selBook,b=>b.title)+'</select><p class="mute">What has happened in this manuscript: who knows what, how relationships and feelings have shifted, open threads and promises. Accepted entries feed drafting. AI proposals wait for you.</p></div>'+(msg?'<p class="err">'+esc(msg)+"</p>":"");
+  h+='<div class="card"><h3>Add entry</h3><label>Type</label><select id="st_t">'+STYPES.map(t=>"<option>"+t+"</option>").join("")+'</select><label>Subject</label><input id="st_s"><label>Description</label><textarea id="st_d" style="min-height:70px"></textarea><label>Established in chapter (optional)</label><select id="st_c"><option value="">None</option>'+opts(cs,"",c=>c.number+". "+c.title)+'</select><p><button class="btn" data-a="addState">Add as accepted</button></p></div>';
+  return h+(es.length?es.map(s=>'<div class="card"><div class="row sp"><h3>'+esc(s.subject)+'</h3><span class="row"><span class="tag">'+s.type+"</span>"+tag(s.status)+'</span></div><textarea id="sd_'+s.id+'" style="min-height:60px"'+(s.status==="rejected"?" readonly":"")+">"+esc(s.desc)+'</textarea><p class="mute">'+s.origin+" · v"+s.version+(s.chapterId?" · chapter "+num(s.chapterId):"")+(s.quote?" · “"+esc(s.quote)+"”"+(s.quoteFound?"":" (not found verbatim)"):"")+'</p><div class="row">'+(s.status!=="rejected"?'<button class="btn alt" data-a="corrState" data-id="'+s.id+'">Save correction</button>':"")+Object.keys(SFLOW[s.status]||{}).map(a=>'<button class="btn'+(a==="accept"?"":" alt")+'" data-a="stateAct" data-act="'+a+'" data-id="'+s.id+'">'+a[0].toUpperCase()+a.slice(1)+"</button>").join("")+(s.status==="proposed"?'<button class="btn alt" data-a="delState" data-id="'+s.id+'">Delete</button>':"")+"</div></div>").join(""):'<p class="mute">No entries yet. Add one, or use “Extract state” on a written chapter.</p>')}
+
+/* ---------- Phase 5B: continuity against the story so far ---------- */
+PROMPTS.continuity={v:"continuity.1",sys:"You are a careful continuity editor. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+function mkCont(c){const b=S.books.find(x=>x.id===c.bookId)||{},br=approvedBrief(c.bookId);if(!br){msg="Approve a story brief first.";return null}
+  const f=br.fields,hd=x=>"Chapter "+x.number+": "+x.title+" ["+x.status+"]\nOutline: "+(x.outline||"").slice(0,600),prevC=chaptersOf(c.bookId).find(x=>x.number===c.number-1),older=chaptersOf(c.bookId).filter(x=>x.number<c.number-1).map(x=>hd(x)+(wc(x.text)?"\nEnding: "+x.text.slice(-600):"")).join("\n\n").slice(0,10000),before=(older+(prevC?"\n\n"+hd(prevC)+(wc(prevC.text)?"\nFull text:\n"+prevC.text.slice(0,14000):""):"")).trim()||"(this is the first chapter)";
+  const p="Check the TARGET chapter against everything that comes before it. Report only real problems: events or introductions repeated although already shown; characters acting as if they have not met or have forgotten established events; contradictions with the canon, narrative state or brief; knowledge a character should not have; timeline impossibilities; requests, promises or hazards from earlier chapters that the target ignores or handles implausibly; decisions that conflict with a character's established role or duties. Do not report taste or style. Also report, as low-severity findings with category 'carry-forward' and an empty evidence string, any open request, promise, hazard or thread from earlier chapters that the target chapter does not pick up. If there is nothing to report, return an empty array. Return a JSON array of at most 10 findings: severity (high|medium|low), category, description, evidence (exact passage copied verbatim from the TARGET outline or text, under 200 characters), replacement (minimal replacement for exactly that passage, or an empty string), action, confidence (0 to 1).\n\nBRIEF CONSTRAINTS:\nTone: "+f.tone+"\nPOV: "+f.pov+"\nTense: "+f.tense+"\nBoundaries: "+f.boundaries+"\nContinuity: "+f.continuity+"\n\nAPPROVED CANON:\n"+canonText(b.seriesId)+"\n\nNARRATIVE STATE SO FAR:\n"+stateText(c.bookId,c.number)+"\n\nEARLIER CHAPTERS:\n"+before+"\n\nTARGET CHAPTER "+c.number+": "+c.title+"\nOutline:\n"+(c.outline||"")+(wc(c.text)?"\n\nText:\n"+c.text:"");
+  const t=mkTask("continuity",c.id,p);if(t){t.scope="continuity";t.textHash=cyrb(c.text)}return t}
+
+/* ---------- Phase 5B: propose canon from a chapter ---------- */
+PROMPTS.canon={v:"canon.1",sys:"You are a series-bible editor extracting permanent story facts. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+function ingestCanon(t){const c=S.chapters.find(x=>x.id===t.ref),b=c&&S.books.find(x=>x.id===c.bookId);if(!b)return;let add=0,skip=0;
+  t.result.forEach(o=>{const live=S.canon.filter(x=>x.seriesId===b.seriesId&&x.type===o.type&&norm(x.name)===norm(o.name)&&x.status!=="rejected"&&x.status!=="superseded");
+    if(live.some(x=>norm(x.desc)===norm(o.description))){skip++;return}
+    const ap=live.find(x=>x.status==="approved"),q=o.quote.trim();
+    S.canon.push({id:id("fact"),seriesId:b.seriesId,type:o.type,name:o.name,desc:o.description,source:"chapter "+c.number+" (AI)",supersedes:ap?ap.id:null,status:"proposed",version:1,at:now(),origin:"ai",quote:q,quoteFound:quoteIn(c.text,q)});add++});
+  t.ingested=true;log("canon.ingest",add+" proposed, "+skip+" already present, from "+c.title,t.id)}
+
+function syncCanon(c){if(!c||c.status!=="proposed")return;const n=$("#ce_n_"+c.id),d=$("#ce_d_"+c.id);if(!n||!d)return;const nn=n.value.trim(),dd=d.value.trim();if(nn&&dd&&(nn!==c.name||dd!==c.desc)){c.name=nn;c.desc=dd;c.version++;log("canon.edit",c.name,c.id)}}
+
+/* ---------- Feedback: toasts, busy indicator, action messages ---------- */
+let lastToast=null;
+function toast(text,kind){kind=kind||"ok";lastToast={text,kind};const box=$("#toasts");if(!box||!document.createElement)return;
+  const d=document.createElement("div");d.className="toast "+kind;d.textContent=({ok:"✓ ",err:"⚠ ",info:"• ",warn:"⏳ "}[kind]||"")+text;
+  d.addEventListener("click",()=>d.remove());box.appendChild(d);while(box.children.length>3)box.removeChild(box.firstChild);
+  setTimeout(()=>d.remove(),({ok:2400,info:3400,warn:5000,err:6000})[kind]||3000)}
+function paintBusy(){const e=$("#busy");if(!e)return;const n=S.tasks.filter(t=>t.status==="running").length;e.hidden=!n;e.textContent=n?"AI working…":""}
+const TLBL={outline:"Outline",draft:"Chapter draft",editorial:"Editorial check",continuity:"Continuity check",audit:"Manuscript audit",state:"State extraction",canon:"Canon proposals",bible:"Canon from the brief",continue:"Continuation",arc:"Arc check"};
+function toastTask(t){const n=t.result&&t.result.length,s=t.calls.length&&t.calls[t.calls.length-1].ms!=null?" in "+Math.round(t.calls[t.calls.length-1].ms/1000)+"s":"";
+  if(t.status==="done"&&t.truncated&&(t.kind==="draft"||t.kind==="continue")){toast((TLBL[t.kind]||"Task")+" finished but was cut off at the output limit. Raise Max output tokens in Settings, then use Continue draft","warn");return}
+  if(t.status==="done"){toast(({outline:"Outline ready ("+n+" chapters)"+s+". Open AI Tasks to apply it",draft:"Draft ready"+s+". Tap Use draft on the chapter",editorial:"Editorial check finished"+s+": "+n+" finding(s)",continuity:"Continuity check finished"+s+": "+n+" finding(s)",audit:"Manuscript audit finished"+s+": "+n+" finding(s)",state:"State extraction finished"+s+": "+n+" proposal(s). See Book State",canon:"Canon check finished"+s+": "+n+" item(s). See Series Bible",bible:"Canon drafted from your brief"+s+": "+n+" proposal(s). Review them in the Series Bible",continue:"Continuation ready"+s+". Tap Use draft to append it",arc:"Arc check finished"+s+": "+n+" finding(s). Open the Story Arc tab"})[t.kind]||"Task finished","ok")}
+  else if(t.status==="failed")toast((TLBL[t.kind]||"Task")+" failed: "+t.error,"err");
+  else if(t.status==="queued")toast((TLBL[t.kind]||"Task")+" is waiting: "+t.error,"warn");
+  else if(t.status==="cancelled")toast((TLBL[t.kind]||"Task")+" cancelled","info")}
+const GEN={genOutline:"Outline requested. I’ll tell you when it’s ready",genDraft:"Drafting started. This can take a minute or two",genState:"Extracting state…",genCanon:"Looking for canon facts…",genAudit:"Manuscript audit started",genEdit:"Editorial check started",genCont:"Continuity check started",runT:"Task restarted",genStyle:"Rewriting the flagged sentences…",genContinue:"Continuing the chapter…",genArc:"Checking the arc against your chapters…",genBible:"Drafting canon from your brief…",fullReview:"Full review started (about 4 AI calls)"};
+const DONE={addPen:"Pen name added",delPen:"Pen name deleted",addSeries:"Series added",delSeries:"Series deleted",addBook:"Book added",addCh:"Chapter added",delCh:"Chapter deleted",saveCh:"Version saved",
+  ch:{submit:"Submitted for review",approve:"Chapter approved and locked",reject:"Returned to draft",reopen:"Reopened for edits"},
+  bk:{to_qa:"Sent to quality check",back_to_drafting:"Back to drafting",approve:"Manuscript approved",revoke:"Approval revoked"},
+  exp:"Export shown below. Copy it out",bkp:"Backup shown. Copy it somewhere safe",rst:"Backup restored",th:"Theme changed",
+  newBrief:"Brief started",saveBrief:"Brief draft saved",approveBrief:"Brief approved and locked",reviseBrief:"New brief version started",
+  addCanon:"Canon proposed",canon:{approve:"Approved as canon",reject:"Proposal rejected",flag:"Marked contradicted",supersede:"Marked superseded"},editCanon:"Edit saved",delCanon:"Entry deleted",
+  finding:{accept:"Finding accepted",dismiss:"Finding dismissed",escalate:"Finding escalated",resolve:"Finding resolved"},fixF:"Fix applied. Previous text kept as a version",
+  useDraft:"Draft applied. Previous text kept as a version",discardDraft:"Draft discarded",closeT:"Discarded",applyOutline:"Outline applied: chapters added",cancelT:"Task cancelled",
+  saveAI:"AI settings saved",clearKey:"API key removed",pickModel:b=>S.settings.backupModel===b.dataset.m&&S.settings.model!==b.dataset.m?"Backup model set to "+b.dataset.m:"Model set to "+b.dataset.m,addState:"Entry added",
+  stateAct:{accept:"Accepted into Book State",reject:"Entry rejected",resolve:"Marked resolved",reopen:"Reopened"},corrState:"Correction saved",delState:"Entry deleted",chFast:"Chapter approved and locked",fixJson:"Leftover JSON repaired. Previous text kept as a version",scanStyle:b=>"Scan finished: "+((styleCache[b.dataset.id]||{res:{total:0}}).res.total)+" flag(s)",saveStyle:"Style settings saved",resetStyle:"Style settings reset",acceptState:"Verified entries accepted into Book State",apPause:"Autopilot paused",apStop:"Autopilot cleared",clearCool:"Pause cleared. Tasks can run again",arcBuild:"Arc plan built. Review and edit the beats",arcSave:"Arc edits saved",arcMark:"Beat marked",arcDel:"Beat removed",arcAdd:"Beat added",arcDrop:"Arc plan deleted",arcReplan:()=>arcMsg,importCanon:()=>importMsg,approveAllCanon:()=>approveMsg};
+function feedback(b,r){const a=b.dataset.a;
+  if(msg){toast(msg,/^(Same inputs|An identical|Nothing changed)/.test(msg)?"info":"err");return}
+  if(GEN[a]){if(r==="keep"&&S.tasks.some(t=>t.status==="running"))toast(GEN[a],"info");return}
+  let m=DONE[a];if(m&&typeof m==="object")m=m[b.dataset.act];if(typeof m==="function")m=m(b);if(m)toast(m,"ok")}
+function doAction(b){msg="";if(navigator.vibrate)try{navigator.vibrate(8)}catch(x){}const r=A[b.dataset.a](b);feedback(b,r);return r}
+
+/* ---------- Automation helpers ---------- */
+const nq=t=>String(t||"").replace(/[\u2018\u2019\u02bc]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/\s+/g," ").trim().toLowerCase();
+function quoteIn(text,q){const T=nq(text),parts=nq(q).split(/\s*(?:\.\.\.|\u2026)\s*/).map(x=>x.replace(/^["'\s]+|["'\s]+$/g,"")).filter(x=>x.length>=8);return parts.length>0&&parts.every(p=>T.includes(p))}
+const settle=async()=>{for(let i=0;i<2400&&S.tasks.some(t=>t.status==="running");i++)await new Promise(r=>setTimeout(r,100))};
+function postApprove(c){if(!S.settings.autoPost)return;const why=ineligible();if(why){toast("Auto-proposals skipped: "+why,"warn");return}
+  (async()=>{A.genState({dataset:{id:c.id}});await settle();A.genCanon({dataset:{id:c.id}});await settle();msg="";toast("Proposals ready. Review Book State and Series Bible","ok");commit()})()}
+function chNext(c){const done=k=>S.tasks.some(t=>t.kind===k&&t.ref===c.id&&t.status==="done");
+  if(c.status==="approved")return!done("state")?"Extract state, then Propose canon":!done("canon")?"Propose canon":"Complete";
+  if(!wc(c.text)){if(!wc(c.outline||""))return"Add an outline, or generate one for the book";return done("continuity")?"AI draft":"Check against story so far, then AI draft"}
+  if(hasJsonWrap(c.text))return"The text contains leftover JSON from a continuation. Tap Repair JSON text";if(looksCut(c.text))return"The text seems to end mid-sentence. Use Continue draft or finish it by hand";const h=cyrb(c.text);if(!S.tasks.some(t=>(t.kind==="editorial"||t.kind==="continuity")&&t.ref===c.id&&t.status==="done"&&t.textHash===h))return"Run checks (or Full review)";
+  const open=S.findings.filter(f=>f.chapterId===c.id&&["open","accepted","escalated"].includes(f.status)).length;
+  if(open)return"Review "+open+" open finding(s)";return c.status==="draft"?"Approve now":"Approve"}
+
+/* ---------- Writing style guard (craft: stock phrases, motifs, rhythm) ---------- */
+const DEFAULT_BAN=["slate-gray eyes","slate-grey eyes","slate gray","steel-gray","orbs","smirk","unreadable expression","something shifted","the air between them","silence stretched","for a long moment","a beat passed","reluctant smile","tiny, reluctant","small, genuine","dangerous to her peace of mind","tension crackled","electricity","a spark of","spark of","heart hammered","heart skipped","heart pounded","shiver down her spine","sent a shiver","a breath she didn't know she was holding","a breath he didn't know he was holding","palpable","testament to","tapestry","symphony of","couldn't help but","found herself","found himself","ghost of a smile","hint of a smile","flicker of","searched his face","searched her face","gaze lingered","intense gaze","her chest tightened","pit of her stomach","butterflies","melted into","drank in","arresting","infuriating","galling","delve","a mix of","something like"];
+const DEFAULT_MOTIFS=["exhaust","tired","weary","shadows under","dark smudges","sleepless","sleep-deprived"];
+const STYLE_RULES="- Prefer concrete, specific, surprising details over generic ones. No stock romance descriptors for eyes, smiles or touch.\n- At most 3 similes or metaphors per 1000 words. Make each one fresh and tied to the point-of-view character's job, history or surroundings. Never stack metaphors.\n- Mention a character's tiredness, exhaustion or shadows under the eyes at most once in a chapter, and not at all if an earlier chapter already did.\n- Avoid 'not X but Y' and 'It wasn't X. It was Y.' constructions. Do not end paragraphs on a neat, quotable summing-up line.\n- Vary sentence length and paragraph shape. Allow fragments and plain statements. Avoid lists of three.\n- Dialogue: people interrupt, deflect and say less than they mean. No speeches that explain feelings.\n- Show emotion through action and subtext. Do not name the emotion when behaviour can carry it.\n- Use em dashes sparingly.\n- Keep one spelling convention, matching the brief.";
+const lines=v=>String(v||"").split("\n").map(x=>x.trim().toLowerCase()).filter(Boolean);
+const banList=()=>lines(S.settings.styleBan!=null?S.settings.styleBan:DEFAULT_BAN.join("\n"));
+const motifList=()=>lines(S.settings.styleMotifs!=null?S.settings.styleMotifs:DEFAULT_MOTIFS.join("\n"));
+const sentencesOf=t=>String(t||"").split(/(?<=[.!?])["”’']?\s+/).map(x=>x.trim()).filter(Boolean);
+const occ=(h,n)=>n?h.split(n).length-1:0;
+const STOP=new Set("the a an and or but of to in on at for with as is was were be been it its he she they his her their him them i you we that this these those not no so if then than from by had has have do did does would could should will can just very".split(" "));
+const toks=t=>nq(t).replace(/[^a-z0-9' ]/g," ").split(/\s+/).filter(Boolean);
+const grams=(tk,n)=>{const m=new Map();for(let i=0;i+n<=tk.length;i++){const g=tk.slice(i,i+n);if(g.filter(x=>!STOP.has(x)).length<2)continue;const k=g.join(" ");m.set(k,(m.get(k)||0)+1)}return m};
+const styleCache={};
+function styleScan(c){const text=c.text||"",T=nq(text),w=Math.max(wc(text),1),per=n=>Math.round(n/w*10000)/10,ss=sentencesOf(text);
+  const ctxOf=p=>{const s=ss.find(x=>nq(x).includes(p));return s?s.slice(0,260):""};
+  const hits=banList().map(p=>({phrase:p,n:occ(T,p)})).filter(h=>h.n>0).map(h=>Object.assign(h,{ctx:ctxOf(h.phrase)}));
+  const motifs=motifList().map(m=>({motif:m,n:occ(T,m)})).filter(m=>m.n>=3);
+  const sim=(T.match(/\b(?:like an? |as if |as though )/g)||[]).length,dash=(text.match(/—/g)||[]).length;
+  const ex=text.match(/\b(?:it|this|that)\s+(?:wasn['’]t|was not|isn['’]t|is not)\b[^.!?]{2,60}[.;,—]\s*(?:it|this|that)\s+(?:was|is)\b[^.!?]{0,60}[.!?]?/gi)||[];
+  const tk=toks(text),rep=[...grams(tk,4)].filter(x=>x[1]>=3).sort((a,b)=>b[1]-a[1]).map(x=>({p:x[0],n:x[1]})).reduce((o,x)=>o.some(y=>y.p.includes(x.p))?o:o.concat([x]),[]).slice(0,6);
+  const mine=grams(tk,6),other=new Set();chaptersOf(c.bookId).filter(x=>x.id!==c.id&&wc(x.text)).slice(-6).forEach(x=>grams(toks(x.text),6).forEach((v,k)=>other.add(k)));
+  const cross=[...mine.keys()].filter(k=>other.has(k)).reduce((o,k)=>o.some(y=>y.includes(k)||k.includes(y))?o:o.concat([k]),[]).slice(0,6);
+  const lens=ss.map(s=>wc(s)),mean=lens.reduce((a,b)=>a+b,0)/(lens.length||1),sd=Math.round(Math.sqrt(lens.reduce((a,b)=>a+(b-mean)*(b-mean),0)/(lens.length||1))*10)/10;
+  const total=hits.reduce((a,h)=>a+h.n,0)+motifs.reduce((a,m)=>a+m.n-2,0)+rep.length+cross.length+ex.length+(per(sim)>8?1:0)+(per(dash)>6?1:0)+(ss.length>=20&&sd<6?1:0);
+  return{hits,motifs,sim:per(sim),dash:per(dash),nb:{n:ex.length,ex:ex.map(x=>x.trim())},rep,cross,sd,total,words:w}}
+function motifsUsed(bid,before){const ch=chaptersOf(bid).filter(x=>x.number<before&&wc(x.text)),T=ch.map(x=>nq(x.text)).join(" "),p=[];
+  motifList().forEach(m=>{const n=occ(T,m);if(n>=3)p.push("'"+m+"' (already "+n+" times)")});
+  banList().forEach(b=>{if(occ(T,b)>0)p.push("'"+b+"'")});return p.join("; ").slice(0,700)}
+function styleBlock(bid,c){const s=S.settings;if(s.styleOn===false)return"";const used=motifsUsed(bid,c.number);
+  return"\n\nSTYLE RULES (follow strictly):\n"+(s.styleRules||STYLE_RULES)+"\nNever use these stock phrases: "+banList().slice(0,60).join("; ")+"."+(used?"\nAlready used in earlier chapters, so do not repeat them: "+used+".":"")}
+function styleBox(c){const sc=styleCache[c.id],ok=sc&&sc.h===cyrb(c.text||"");
+  let h='<div class="card" style="background:var(--fill)"><h3>Style guard</h3><p class="mute">Scans for stock phrases, repeated motifs and overused patterns. No AI call.</p><div class="row"><button class="btn alt" data-a="scanStyle" data-id="'+c.id+'">Scan this chapter</button>'+(ok&&sc.res.total&&c.status!=="approved"?'<button class="btn alt" data-a="genStyle" data-id="'+c.id+'">Rewrite flagged sentences (AI)</button>':"")+"</div>";
+  if(sc&&!ok)h+='<p class="mute">Text changed since the last scan. Scan again.</p>';
+  if(ok){const r=sc.res;h+="<p>"+(r.total?"<b>"+r.total+"</b> flag(s)":'<span class="ok">No flags</span>')+" in "+r.words+" words.</p>";
+    if(r.hits.length)h+='<p class="mute">Stock phrases: '+r.hits.map(x=>esc(x.phrase)+" ×"+x.n).join("; ")+"</p>";
+    if(r.motifs.length)h+='<p class="mute">Overused motifs: '+r.motifs.map(x=>esc(x.motif)+" ×"+x.n).join("; ")+"</p>";
+    if(r.nb.n)h+='<p class="mute">“It wasn’t X. It was Y.” pattern ×'+r.nb.n+"</p>";
+    h+='<p class="mute">Simile markers: '+r.sim+" per 1000 words · em dashes: "+r.dash+" per 1000 · sentence-length spread: "+r.sd+"</p>";
+    if(r.rep.length)h+='<p class="mute">Repeated in this chapter: '+r.rep.map(x=>"“"+esc(x.p)+"” ×"+x.n).join("; ")+"</p>";
+    if(r.cross.length)h+='<p class="mute">Repeated from other chapters: '+r.cross.map(x=>"“"+esc(x)+"”").join("; ")+"</p>"}
+  return h+"</div>"}
+function styleCard(){const s=S.settings;return'<div class="card"><h3>Writing style guard</h3><p class="mute">Steers drafts away from stock phrases and repeated motifs, and scans chapters for them. It improves craft; it does not hide how a book was made. Check each platform’s AI-disclosure rules before publishing.</p><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="sty_on" style="width:auto"'+(s.styleOn!==false?" checked":"")+'> Add style rules to AI drafts</label><label>Style rules given to the AI</label><textarea id="sty_rules" style="min-height:200px">'+esc(s.styleRules||STYLE_RULES)+'</textarea><label>Stock phrases to avoid (one per line)</label><textarea id="sty_ban" style="min-height:160px">'+esc(s.styleBan!=null?s.styleBan:DEFAULT_BAN.join("\n"))+'</textarea><label>Motifs to limit (one per line; flagged at 3 or more uses in a chapter)</label><textarea id="sty_mot" style="min-height:90px">'+esc(s.styleMotifs!=null?s.styleMotifs:DEFAULT_MOTIFS.join("\n"))+'</textarea><div class="row" style="margin-top:8px"><button class="btn" data-a="saveStyle">Save style settings</button><button class="btn alt" data-a="resetStyle">Reset to defaults</button></div></div>'}
+
+/* ---------- Autopilot batch + review inbox ---------- */
+let apScopeOverride="";
+const APL={outlineCheck:"outline check",draft:"drafting",apply:"applying the draft",continuity:"continuity check",editorial:"editorial check",state:"state extraction",canon:"canon proposals",blocked:"needs an outline"};
+function apNext(c,o){const has=(k,f)=>S.tasks.some(x=>x.kind===k&&x.ref===c.id&&x.status==="done"&&(!f||f(x))),h=cyrb(c.text||"");
+  if(!wc(c.text)){if(!wc(c.outline||""))return"blocked";if(o.outlineCheck&&!has("continuity"))return"outlineCheck";
+    return S.tasks.some(x=>x.kind==="draft"&&x.ref===c.id&&x.status==="done"&&!x.closed)?"apply":"draft"}
+  if(!has("continuity",x=>x.textHash===h))return"continuity";
+  if(o.editorial&&!has("editorial",x=>x.textHash===h))return"editorial";
+  if(o.extras&&!has("state",x=>x.textHash===h))return"state";
+  if(o.extras&&!has("canon",x=>x.textHash===h))return"canon";return null}
+function apLog(ap,c,t){ap.log.push({at:now(),n:c.number,t});ap.log=ap.log.slice(-40)}
+async function runAP(){const ap=S.autopilot;if(!ap||ap.status==="running")return;ap.status="running";ap.note="";commit();const o=ap.opts;
+  try{for(const id of ap.chapterIds){const c=S.chapters.find(x=>x.id===id);if(!c||c.status==="approved")continue;
+    for(let g=0;g<14;g++){if(ap.status!=="running")return;const st=apNext(c,o);if(!st)break;
+      if(st==="blocked"){apLog(ap,c,"skipped: no outline");break}
+      const why=ineligible();if(why){ap.status="paused";ap.note="AI unavailable: "+why;commit();toast("Autopilot paused: "+why,"warn");return}
+      if(st==="apply"){const k=S.tasks.find(x=>x.kind==="draft"&&x.ref===c.id&&x.status==="done"&&!x.closed);A.useDraft({dataset:{id:k.id}});apLog(ap,c,"draft applied");commit();if(looksCut(c.text)){ap.status="paused";ap.note="Chapter "+c.number+" was cut off at the output limit. Raise Max output tokens in Settings, tap Continue draft on the chapter and use the continuation, then Resume.";commit();toast("Autopilot paused: chapter "+c.number+" was cut off","warn");return}continue}
+      msg="";apScopeOverride=st==="editorial"?o.scope:"";A[{outlineCheck:"genCont",draft:"genDraft",continuity:"genCont",editorial:"genEdit",state:"genState",canon:"genCanon"}[st]]({dataset:{id:c.id}});apScopeOverride="";await settle();
+      if(apNext(c,o)===st){const bad=S.tasks.find(x=>x.ref===c.id&&["failed","queued","cancelled"].includes(x.status)&&x.updated>=ap.startedAt);ap.status="paused";ap.note=(bad&&bad.error)||msg||"Step “"+(APL[st]||st)+"” did not complete.";commit();toast("Autopilot paused at chapter "+c.number+": "+ap.note,"warn");return}
+      apLog(ap,c,(APL[st]||st)+" done")}
+    if(wc(c.text))styleCache[c.id]={h:cyrb(c.text),res:styleScan(c)}}
+    ap.status="done";commit();toast("Autopilot finished. Open the Review inbox below","ok")}
+  catch(e){ap.status="paused";ap.note=String(e&&e.message||e);commit()}}
+function inboxCard(c){const f=S.findings.filter(x=>x.chapterId===c.id&&["open","accepted","escalated"].includes(x.status)),hi=f.filter(x=>x.severity==="high").length,ps=S.state.filter(x=>x.chapterId===c.id&&x.status==="proposed"),pv=ps.filter(x=>x.quoteFound).length,pc=S.canon.filter(x=>x.status==="proposed"&&x.source==="chapter "+c.number+" (AI)").length,sc=styleCache[c.id]&&styleCache[c.id].h===cyrb(c.text||"")?styleCache[c.id].res.total+" style flag(s)":"style not scanned",can=c.status!=="approved"&&wc(c.text)&&!hi;
+  return'<div class="card"><div class="row sp"><h3>'+c.number+". "+esc(c.title)+"</h3>"+tag(c.status)+'</div><p class="mute">Next: '+esc(chNext(c))+'</p><p class="mute">'+f.length+" open finding(s)"+(hi?" ("+hi+" high)":"")+" · "+ps.length+" proposed state ("+pv+" verified) · "+pc+" proposed canon · "+sc+'</p><div class="row"><button class="btn alt" data-a="go" data-v="books" data-book="'+c.bookId+'">Open chapter</button>'+(pv?'<button class="btn alt" data-a="acceptState" data-id="'+c.id+'">Accept '+pv+" verified state</button>":"")+(ps.length?'<button class="btn alt" data-a="go" data-v="state" data-book="'+c.bookId+'">Book State</button>':"")+(pc?'<button class="btn alt" data-a="go" data-v="bible" data-book="'+c.bookId+'">Series Bible</button>':"")+(can?'<button class="btn" data-a="chFast" data-id="'+c.id+'">Approve now</button>':"")+"</div></div>"}
+function vAuto(){
+  if(!S.books.length)return'<p class="mute">Create a book first.</p>';
+  if(!S.books.find(b=>b.id===selBook))selBook=S.books[0].id;
+  const ap=S.autopilot&&S.autopilot.bookId===selBook?S.autopilot:null,o=Object.assign({outlineCheck:true,editorial:true,scope:"developmental",extras:true},S.settings.apOpts||{}),cb=(i,v,t)=>'<label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="'+i+'" style="width:auto"'+(v?" checked":"")+"> "+t+"</label>";
+  let h='<div class="card"><label>Book</label><select id="sb">'+opts(S.books,selBook,b=>b.title)+"</select></div>"+(msg?'<p class="err">'+esc(msg)+"</p>":"");
+  if(ap){h+='<div class="card"><div class="row sp"><h3>Autopilot</h3>'+tag(ap.status)+"</div>"+(ap.note?'<p class="warn">'+esc(ap.note)+"</p>":"")+ap.chapterIds.map(id=>{const c=S.chapters.find(x=>x.id===id);if(!c)return"";const n=c.status==="approved"?"approved":apNext(c,ap.opts);return'<p class="mute">Chapter '+c.number+": "+(n===null?"✓ ready for your review":n==="approved"?"✓ approved":"next: "+(APL[n]||n))+"</p>"}).join("")+(ap.log.length?'<p class="mute">'+ap.log.slice(-6).map(l=>"Ch "+l.n+": "+esc(l.t)).join(" · ")+"</p>":"")+'<div class="row">'+(ap.status==="running"?'<button class="btn alt" data-a="apPause">Pause</button>':"")+(ap.status==="paused"?'<button class="btn" data-a="apResume">Resume</button>':"")+(ap.status!=="running"?'<button class="btn alt" data-a="apStop">Clear</button>':"")+"</div></div>"}
+  if(!ap||ap.status!=="running")h+='<div class="card"><h3>Start a batch</h3>'+(S.arcs.some(a=>a.bookId===selBook)?"":'<p class="warn">No story arc yet. Build one in the Story Arc tab so outlines plan setbacks.</p>')+'<p class="mute">Drafts the next chapters that already have outlines, checks them, and stops for your review. It only fills empty chapters, never approves anything, and pauses if a step fails. Each chapter uses about 3 to 6 AI calls.</p><label>Chapters to process (1 to 4)</label><input id="ap_n" type="number" value="2">'+cb("ap_oc",o.outlineCheck,"Check each outline against the story first")+cb("ap_ed",o.editorial,"Run an editorial check")+'<select id="ap_scope" style="margin-top:8px">'+Object.keys(SCOPES).map(k=>"<option"+(k===o.scope?" selected":"")+">"+k+"</option>").join("")+"</select>"+cb("ap_ex",o.extras,"Propose Book State and canon")+'<p class="mute">Calls today: '+callsToday()+" of "+S.settings.limit+'.</p><p><button class="btn" data-a="apStart">Start autopilot</button></p></div>';
+  const rows=chaptersOf(selBook).filter(c=>wc(c.text)&&(c.status!=="approved"||S.state.some(x=>x.chapterId===c.id&&x.status==="proposed")||S.canon.some(x=>x.status==="proposed"&&x.source==="chapter "+c.number+" (AI)")));
+  return h+"<h2>Review inbox</h2>"+(rows.length?rows.map(inboxCard).join(""):'<p class="mute">Nothing waiting for review.</p>')}
+
+/* ---------- Canon tools: bulk import, approve eligible, draft from brief, coverage ---------- */
+PROMPTS.bible={v:"bible.1",sys:"You are a series-bible editor building a story bible. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+let importMsg="",approveMsg="";
+function addCanonEntry(sid,o,source,origin){const live=S.canon.filter(x=>x.seriesId===sid&&x.type===o.type&&norm(x.name)===norm(o.name)&&x.status!=="rejected"&&x.status!=="superseded");if(live.some(x=>norm(x.desc)===norm(o.desc)))return"dup";const ap=live.find(x=>x.status==="approved");S.canon.push({id:id("fact"),seriesId:sid,type:o.type,name:o.name,desc:o.desc,source,supersedes:ap?ap.id:null,status:"proposed",version:1,at:now(),origin,quote:"",quoteFound:false});return"ok"}
+function ingestBible(t){const b=S.books.find(x=>x.id===t.ref);if(!b)return;let ok=0,dup=0;t.result.forEach(o=>{addCanonEntry(b.seriesId,{type:o.type,name:o.name,desc:o.description},"brief (AI)","bible")==="dup"?dup++:ok++});t.ingested=true;log("canon.ingest",ok+" proposed from the brief, "+dup+" already present",t.id)}
+function coverage(sid){const live=S.canon.filter(c=>c.seriesId===sid&&["approved","proposed"].includes(c.status)),n=k=>live.filter(c=>c.type===k).length,need={character:2,location:1,relationship:1,timeline:1,fact:3,thread:1},miss=[];Object.keys(need).forEach(k=>{if(n(k)<need[k])miss.push(k+" ("+n(k)+", want at least "+need[k]+")")});return{miss,total:live.length}}
+function bibleTools(){const cv=coverage(selSeries),el=S.canon.filter(c=>c.seriesId===selSeries&&c.status==="proposed"&&!(c.origin==="ai"&&!c.quoteFound)).length;
+  return'<div class="card"><h3>Bulk tools</h3><p class="'+(cv.miss.length?"warn":"ok")+'">'+(cv.miss.length?"Coverage gaps: "+esc(cv.miss.join("; ")):"Coverage: all basic categories present")+'</p><div class="row"><button class="btn" data-a="genBible">Draft canon from the brief (1 AI call)</button></div><label>Paste entries, one per line: type | Subject — attribute | value</label><textarea id="bulk_t" style="min-height:120px" placeholder="character | Lena Hart — age | 32"></textarea><div class="row" style="margin-top:8px"><button class="btn alt" data-a="importCanon">Import as proposals</button>'+(el?'<button class="btn alt" data-a="approveAllCanon">Approve '+el+" proposed (skips conflicts)</button>":"")+'</div><p class="mute">Types: '+CTYPES.join(", ")+". Nothing becomes canon until you approve it. Entries from chapters whose quote was not found are excluded from bulk approval.</p></div>"}
+
+/* ---------- Backup model for daily quota limits ---------- */
+function activeModel(){const s=S.settings,cool=m=>m&&(((s.coolModels||{})[m]>now())||(m===s.model&&s.coolUntil&&s.coolUntil>now()));
+  if(!cool(s.model))return s.model;if(s.backupModel&&s.backupModel!==s.model&&!cool(s.backupModel))return s.backupModel;return null}
+
+/* ---------- Cut-off drafts: detection and continuation ---------- */
+PROMPTS.continue={v:"continue.1",sys:"You are a fiction author finishing a chapter that was cut off. Reply with the continuation prose only: no headings, no commentary, no notes."};
+const looksCut=t=>{const s=String(t||"").trim();return s.length>200&&!/[.!?…"”’')\]*_]$/.test(s)};
+function joinCont(a,r){a=String(a||"").replace(/\s+$/,"");r=String(r||"").replace(/^\s+/,"");const ended=/[.!?…"”’')\]]$/.test(a);return a+(ended?"\n\n":(/^[,.;:!?)’”"']/.test(r)?"":" "))+r}
+
+/* ---------- JSON-wrapper repair ---------- */
+const hasJsonWrap=t=>/\{\s*"[A-Za-z_]+"\s*:\s*"/.test(String(t||""))&&/"continuation"|"text"|"content"/.test(String(t||""));
+function unwrapJson(s){const m=String(s).match(/^\s*\{\s*"[A-Za-z_]+"\s*:\s*"/);if(!m)return s;const body=s.slice(m[0].length).replace(/"\s*\}?\s*$/,"");return body.replace(/\\n/g,"\n").replace(/\\t/g,"\t").replace(/\\"/g,'"').replace(/\\\\/g,"\\")}
+
+/* ---------- Story arc: planned conflict, setbacks and complications ---------- */
+let arcMsg="";
+const MAJOR=["turn","complication","setback","resolution"];
+const ARC_TPL=[
+["setup","Setup: the lead’s armour and the clock","setup",.02,"Show the lead’s flaw in action, what is at stake and the deadline.",6],
+["meet","Meeting the love interest","turn",.05,"First contact with friction; they want opposing things.",6],
+["bargain","Forced proximity","turn",.09,"A reason they must work together; each has something to lose.",9],
+["comp1","First complication","complication",.13,"A plan goes wrong in a way that costs something and cannot be fixed in this chapter.",6],
+["fun","Growing chemistry","release",.18,"Competence and fun; they begin to rely on each other, with a hint of what could go wrong.",14],
+["comp2","The fix has a price","complication",.22,"The first solution creates a new problem for someone they care about.",18],
+["set1","First real setback","setback",.28,"An external setback hits; the easy solution fails; someone pays a price.",6],
+["win","A win that feels like progress","release",.34,"A genuine success, which also raises the stakes.",22],
+["comp3","An ally or rule turns against them","complication",.40,"Someone they relied on, or a rule they assumed would bend, works against them.",14],
+["mid","Midpoint reversal","turn",.50,"A false victory or a revelation changes the stakes; intimacy rises and so does the risk.",6],
+["fall","Fallout from the midpoint","complication",.56,"The reversal has consequences they did not plan for.",18],
+["press","Pressure and cracks","complication",.62,"An outside antagonist or deadline squeezes; a secret or flaw starts causing damage.",9],
+["secret","The secret or misunderstanding lands","setback",.70,"What one lead hid or misread is exposed at the worst moment.",6],
+["dark","Dark moment","setback",.80,"They separate or the plan collapses; each lead faces the flaw that caused it.",6],
+["reckon","Facing the flaw alone","complication",.85,"Each lead sees what their flaw has cost, without the other to lean on.",14],
+["choose","Choosing each other","turn",.90,"Each lead acts against their flaw, at a cost.",9],
+["climax","Climax and resolution","resolution",.97,"The main problem is solved by what they have learned; the relationship is resolved.",6]];
+const arcOf=bid=>S.arcs.find(a=>a.bookId===bid);
+const confOf=c=>{const m=(c.outline||"").match(/Conflict: *([^\n]*)/);return m?m[1]:""};
+function buildArc(bid,N,direction){N=Math.max(6,Math.min(80,parseInt(N)||20));const k=chaptersOf(bid).length;let prev=0;
+  const beats=ARC_TPL.filter(t=>N>=t[5]).map(t=>{let ch=Math.min(N,Math.max(1,Math.round(t[3]*N)));if(MAJOR.includes(t[2])){if(ch<=prev)ch=Math.min(N,prev+1);prev=ch}return{id:id("bt"),key:t[0],label:t[1],type:t[2],chapter:ch,summary:t[4],status:ch>k?"planned":"unchecked"}});
+  S.arcs=S.arcs.filter(a=>a.bookId!==bid);const a={id:id("arc"),bookId:bid,total:N,direction:direction||"",beats,updated:now()};S.arcs.push(a);log("arc.build",N+" chapters, "+beats.length+" beats",a.id);return a}
+function arcCadence(a,from){const k=from||chaptersOf(a.bookId).length+1,has=new Set(a.beats.filter(b=>MAJOR.includes(b.type)&&b.status!=="delivered").map(b=>b.chapter));let run=0,max=0,at=0;for(let c=k;c<=a.total;c++){if(has.has(c))run=0;else{run++;if(run>max){max=run;at=c-run+1}}}return{maxGap:max,at}}
+function replanArc(a){const k=chaptersOf(a.bookId).length;
+  a.beats.forEach(b=>{if(b.chapter<=k&&b.type==="setup"&&b.status==="unchecked")b.status="delivered"});
+  const pend=a.beats.filter(b=>b.status!=="delivered");let cursor=k+1,moved=0;
+  pend.forEach(b=>{const old=b.chapter;if(MAJOR.includes(b.type)){b.chapter=Math.max(cursor,b.chapter>k?b.chapter:cursor);cursor=b.chapter+1}else b.chapter=Math.max(k+1,cursor-1);b.status="planned";if(b.chapter!==old)moved++});
+  a.total=Math.max(a.total,...a.beats.map(b=>b.chapter));a.updated=now();log("arc.replan",moved+" beat(s) rescheduled from chapter "+(k+1),a.id);return moved}
+function arcBlock(bid,from,to){const a=arcOf(bid);if(!a)return"";const live=a.beats.filter(b=>b.status!=="delivered"),inr=live.filter(b=>b.chapter>=from&&b.chapter<=to).sort((x,y)=>x.chapter-y.chapter),next=live.filter(b=>b.chapter>to).sort((x,y)=>x.chapter-y.chapter).slice(0,3);
+  return"\n\nSTORY ARC (the outline must plan conflict, not just events):\n"+(a.direction?"Author’s direction: "+a.direction+"\n":"")+(inr.length?"Beats scheduled for these chapters:\n"+inr.map(b=>"- Chapter "+b.chapter+" ["+b.type+"] "+b.label+": "+b.summary).join("\n")+"\n":"No arc beat falls in these chapters; use them to deepen the pressure from the last beat.\n")+(next.length?"Coming later (do not resolve these early):\n"+next.map(b=>"- Chapter "+b.chapter+" ["+b.type+"] "+b.label).join("\n")+"\n":"")+"Rules: every chapter's conflict field must say what goes wrong or gets harder, and cost must name what a lead loses or risks. A chapter scheduled for a setback or complication must NOT resolve it by its end. No more than one chapter in two may end on a comfortable, resolved note. A solution found in one chapter must cost something or open a new problem. Fill arcBeat with the beat label the chapter serves, or 'pressure' if none."}
+function arcDraft(bid,c){const a=arcOf(bid);if(!a)return"";const bs=a.beats.filter(b=>b.chapter===c.number&&b.status!=="delivered");if(!bs.length)return"";
+  return"\n\nARC REQUIREMENT: this chapter serves "+bs.map(b=>"“"+b.label+"” ["+b.type+"]: "+b.summary).join(" Also: ")+" Show the conflict on the page. Unless the beat type is release or resolution, do not tie it up by the end: finish on the cost or the open problem. Do not solve here what the arc schedules for a later chapter."}
+PROMPTS.arc={v:"arc.1",sys:"You are a developmental editor checking whether a romantic comedy delivers real conflict. Reply with ONLY a JSON array, no markdown fences and no commentary."};
+const rowFind=f=>'<div style="border-top:1px solid var(--line);padding:6px 0"><span class="tag '+(f.severity==="high"?"err":f.severity==="medium"?"warn":"")+'">'+f.severity+'</span> <span class="tag">'+esc(f.category)+'</span> <span class="tag">'+f.status+"</span><p>"+esc(f.desc)+"</p>"+(f.evidence?'<p class="mute">Passage: “'+esc(f.evidence)+"”"+(f.evidenceFound?"":" (not found verbatim)")+"</p>":"")+'<p class="mute">Suggested: '+esc(f.action)+'</p><div class="row">'+Object.keys(FIND_FLOW[f.status]||{}).map(a=>'<button class="btn alt" data-a="finding" data-act="'+a+'" data-id="'+f.id+'">'+a[0].toUpperCase()+a.slice(1)+"</button>").join("")+"</div></div>";
+function vArc(){
+  if(!S.books.length)return'<p class="mute">Create a book first.</p>';
+  if(!S.books.find(b=>b.id===selBook))selBook=S.books[0].id;
+  const b=S.books.find(x=>x.id===selBook),a=arcOf(b.id),k=chaptersOf(b.id).length;
+  let h='<div class="card"><label>Book</label><select id="sb">'+opts(S.books,selBook,x=>x.title)+"</select></div>"+(msg?'<p class="err">'+esc(msg)+"</p>":"");
+  if(!a)return h+'<div class="card"><h3>Plan the conflict</h3><p class="mute">An arc plan schedules setbacks, complications and reversals across the whole book, so outlines stop solving everything neatly. It is built from a standard romcom structure with no AI call, and you can edit every beat.</p><label>Total chapters planned</label><input id="arc_n" type="number" value="'+Math.max(k+5,Math.round((b.target||60000)/3000)||20)+'"><label>Your creative direction (optional)</label><textarea id="arc_dir" style="min-height:90px" placeholder="e.g. The midpoint reversal: a rival developer appears. Noah’s conflict of interest comes back to bite them."></textarea><p><button class="btn" data-a="arcBuild">Build arc plan</button></p></div>';
+  const cad=arcCadence(a);
+  h+='<div class="card"><h3>Arc plan: '+a.beats.length+" beats over "+a.total+' chapters</h3><p class="'+(cad.maxGap>2?"warn":"ok")+'">'+(cad.maxGap>2?"Cadence warning: "+cad.maxGap+" chapters in a row from chapter "+cad.at+" with no setback or complication planned.":"Cadence OK: no stretch of more than two chapters without a planned setback or complication.")+'</p><p class="mute">'+k+" chapter(s) written. For beats in written chapters, tap Delivered if the chapter really did it, or Missed if not, then re-plan.</p><label>Your creative direction</label><textarea id=\"arc_dir\" style=\"min-height:80px\">"+esc(a.direction)+'</textarea><div class="row" style="margin-top:8px"><button class="btn" data-a="arcSave">Save edits</button><button class="btn alt" data-a="arcReplan">Re-plan from chapter '+(k+1)+'</button><button class="btn alt" data-a="genArc">Check the arc against my chapters (AI)</button></div></div>';
+  const af=S.findings.filter(f=>f.bookId===b.id&&f.scope==="arc"&&!["dismissed","resolved"].includes(f.status));
+  if(af.length)h+='<div class="card"><h3>Arc check findings</h3>'+af.map(rowFind).join("")+"</div>";
+  return h+a.beats.slice().sort((x,y)=>x.chapter-y.chapter).map(bt=>'<div class="card"><div class="row sp"><h3>'+esc(bt.label)+'</h3><span class="row"><span class="tag'+(bt.type==="setback"||bt.type==="complication"?" warn":"")+'">'+bt.type+"</span>"+tag(bt.status)+'</span></div><label>Chapter</label><input id="arc_ch_'+bt.id+'" type="number" value="'+bt.chapter+'"><label>What must happen</label><textarea id="arc_sm_'+bt.id+'" style="min-height:70px">'+esc(bt.summary)+'</textarea><div class="row" style="margin-top:8px">'+(bt.chapter<=k?'<button class="btn alt" data-a="arcMark" data-id="'+bt.id+'" data-s="delivered">Delivered</button><button class="btn alt" data-a="arcMark" data-id="'+bt.id+'" data-s="missed">Missed</button>':"")+'<button class="btn alt" data-a="arcDel" data-id="'+bt.id+'">Remove</button></div></div>').join("")+'<p class="row"><button class="btn alt" data-a="arcAdd">Add a beat</button><button class="btn alt" data-a="arcDrop">Delete the arc</button></p>'}
+
+/* ---------- Views ---------- */
+const tag=(s)=>'<span class="tag '+({approved:"ok",review:"warn",qa:"warn"}[s]||"")+'">'+esc(s)+"</span>";
+const opts=(arr,sel,f)=>arr.map(x=>'<option value="'+x.id+'"'+(x.id===sel?" selected":"")+">"+esc(f(x))+"</option>").join("");
+
+function vOverview(){
+  const st=S.settings,ap=S.books.filter(b=>b.status==="approved").length;
+  return '<div class="grid">'+[["Pen names",S.pens.length],["Series",S.series.length],["Books",S.books.length],["Chapters",S.chapters.length],["Approved books",ap]].map(x=>'<div class="card stat"><b>'+x[1]+"</b>"+x[0]+"</div>").join("")+"</div>"+
+  '<div class="card"><h3>AI status</h3><p>'+(st.kill||st.noAI?'<span class="tag warn">No-AI mode</span> Deterministic features only.':'<span class="tag">AI enabled</span>')+' Calls only run when the kill switch and No-AI mode are both off and a key is set.</p></div>'+
+  '<div class="card"><h3>Where this build stands</h3><p class="mute">Working: pen names, series, books, chapters with versions, chapter and book workflow with approval gates, quality checks, manuscript export, backup and restore, history, versioned story briefs with approval, a series bible with canon states and protection, a provider router with one Gemini adapter, AI outlines and chapter drafts, usage logging, and AI editorial findings with verified passages and targeted fixes, generation snapshots, a staged Book State, a manuscript audit and a separate editorial-readiness check. The Gemini adapter has not been tested against the live API.</p><p class="mute">Not built yet: concept generation, publishing checklist, analytics, market research. These are greyed out or noted in the menu. Automated tests are not written or run yet.</p></div>'+
+  '<div class="card"><h3>Data location</h3><p class="mute">Everything stays in this browser’s IndexedDB. Nothing is sent anywhere. Use Settings to back up.</p></div>'}
+
+function vPens(){
+  return '<div class="card"><h2>New pen name</h2><label>Name</label><input id="pn"><label>Voice and brand notes</label><textarea id="pv" style="min-height:70px"></textarea><p><button class="btn" data-a="addPen">Add pen name</button></p></div>'+
+  (S.pens.length?S.pens.map(p=>'<div class="card"><div class="row sp"><h3>'+esc(p.name)+'</h3><button class="btn alt" data-a="delPen" data-id="'+p.id+'">Delete</button></div><p class="mute">'+esc(p.notes)+"</p><p class='mute'>"+S.series.filter(s=>s.penId===p.id).length+" series</p></div>").join(""):'<p class="mute">No pen names yet. Add one to start a series.</p>')}
+
+function vSeries(){
+  if(!S.pens.length)return'<p class="mute">Create a pen name first.</p>';
+  return '<div class="card"><h2>New series</h2><label>Pen name</label><select id="sp">'+opts(S.pens,"",p=>p.name)+'</select><label>Series name</label><input id="sn"><label>Subgenre</label><input id="sg" placeholder="e.g. small-town romantic comedy"><p><button class="btn" data-a="addSeries">Add series</button></p></div>'+
+  S.series.map(s=>'<div class="card"><div class="row sp"><h3>'+esc(s.name)+'</h3><button class="btn alt" data-a="delSeries" data-id="'+s.id+'">Delete</button></div><p class="mute">'+esc((S.pens.find(p=>p.id===s.penId)||{}).name)+" · "+esc(s.genre)+" · "+S.books.filter(b=>b.seriesId===s.id).length+" books</p></div>").join("")}
+
+function vBooks(){
+  if(bookId&&S.books.find(b=>b.id===bookId))return vBook(S.books.find(b=>b.id===bookId));
+  if(!S.series.length)return'<p class="mute">Create a series first.</p>';
+  return '<div class="card"><h2>New book</h2><label>Series</label><select id="bs">'+opts(S.series,"",s=>s.name)+'</select><label>Title</label><input id="bt"><label>Target word count</label><input id="bw" type="number" inputmode="numeric" value="60000"><p><button class="btn" data-a="addBook">Add book</button></p></div>'+
+  S.books.map(b=>'<div class="card"><div class="row sp"><h3>'+esc(b.title)+"</h3>"+tag(b.status)+'</div><p class="mute">'+esc((S.series.find(s=>s.id===b.seriesId)||{}).name)+" · book "+b.order+" · "+chaptersOf(b.id).length+' chapters</p><button class="btn" data-a="open" data-id="'+b.id+'">Open</button></div>').join("")}
+
+function vBook(b){
+  const cs=chaptersOf(b.id),r=qa(b);
+  let h='<p><button class="btn alt" data-a="back">‹ All books</button></p><div class="card"><div class="row sp"><h2>'+esc(b.title)+"</h2>"+tag(b.status)+'</div><div class="row">';
+  Object.keys(BK_FLOW[b.status]).forEach(a=>h+='<button class="btn'+(a==="approve"?"":" alt")+'" data-a="bk" data-act="'+a+'" data-id="'+b.id+'">'+({to_qa:"Send to quality check",back_to_drafting:"Back to drafting",approve:"Approve manuscript",revoke:"Revoke approval"}[a])+"</button>");
+  if(b.status==="qa"&&readiness(b).length)h+='<button class="btn alt" data-a="bk" data-act="approve" data-force="1" data-id="'+b.id+'">Approve with override</button>';h+='</div><p class="mute">Total '+r.tot+" words"+(b.target?" of "+b.target+" target":"")+"</p>"+(msg?'<p class="err">'+esc(msg)+"</p>":"")+"</div>";
+  h+='<div class="card"><h3>Quality check</h3>'+(r.errs.length?"<ul class='err'>"+r.errs.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul>":'<p class="ok">All hard checks pass.</p>')+(r.warns.length?"<ul class='warn'>"+r.warns.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul>":"")+'<p class="mute">Passing checks does not mean publication quality. Warnings are heuristics.</p></div>';
+  h+=auditBox(b);h+='<div class="card"><h3>AI outline</h3><label>Number of chapters</label><input id="on" type="number" value="3"><p><button class="btn alt" data-a="genOutline" data-id="'+b.id+'">Generate outline</button></p><p class="mute">Creates a task you review in AI Tasks. Nothing is added until you apply it.</p></div><h2>Chapters</h2>';
+  cs.forEach(c=>{const lock=c.status==="approved";
+    h+='<div class="card"><div class="row sp"><h3>'+c.number+". "+esc(c.title)+"</h3>"+tag(c.status)+'</div><p class="mute" style="margin:0 0 .4rem">Next: '+esc(chNext(c))+'</p><label>Title</label><input data-f="title" data-id="'+c.id+'" value="'+esc(c.title)+'"'+(lock?" disabled":"")+'><label>Outline (guides AI drafting)</label><textarea data-f="outline" data-id="'+c.id+'" style="min-height:90px"'+(lock?" readonly":"")+'>'+esc(c.outline||"")+'</textarea>'+draftBox(c)+srcLine(c)+findBox(c)+styleBox(c)+'<label>Text · '+wc(c.text)+' words · v'+c.version+'</label><textarea data-f="text" data-id="'+c.id+'"'+(lock?" readonly":"")+">"+esc(c.text)+'</textarea><div class="row" style="margin-top:8px">'+
+    (lock?"":'<button class="btn alt" data-a="saveCh" data-id="'+c.id+'">Save version</button>')+(c.status==="draft"?'<button class="btn alt" data-a="genDraft" data-id="'+c.id+'">AI draft</button>':"")+(c.status!=="approved"&&hasJsonWrap(c.text)?'<button class="btn" data-a="fixJson" data-id="'+c.id+'">Repair JSON text</button>':"")+(c.status!=="approved"&&wc(c.text)?'<button class="btn alt" data-a="genContinue" data-id="'+c.id+'">Continue draft</button>':"")+'<button class="btn alt" data-a="genState" data-id="'+c.id+'">Extract state</button><button class="btn alt" data-a="genCanon" data-id="'+c.id+'">Propose canon</button>'+
+    Object.keys(CH_FLOW[c.status]).map(a=>'<button class="btn'+(a==="approve"?"":" alt")+'" data-a="ch" data-act="'+a+'" data-id="'+c.id+'">'+({submit:"Submit for review",approve:"Approve",reject:"Return to draft",reopen:"Reopen for edits"}[a])+"</button>").join("")+
+    (c.status==="draft"&&wc(c.text)?'<button class="btn" data-a="chFast" data-id="'+c.id+'">Approve now</button>':"")+(c.status==="draft"?'<button class="btn alt" data-a="delCh" data-id="'+c.id+'">Delete</button>':"")+"</div></div>"});
+  h+='<p><button class="btn" data-a="addCh" data-id="'+b.id+'">Add chapter</button></p>';
+  h+='<div class="card"><h3>Export manuscript</h3><p class="mute">Markdown. Copy it into your editor. Unapproved books are watermarked.</p><button class="btn alt" data-a="exp" data-id="'+b.id+'">Show export</button><div id="exp"></div></div>';
+  return h}
+
+function vLog(){return S.log.length?'<div class="card wide">'+S.log.map(l=>'<p style="margin:.3rem 0"><span class="mute">'+esc(l.at.slice(0,19).replace("T"," "))+"</span> <b>"+esc(l.kind)+"</b> "+esc(l.detail)+"</p>").join("")+"</div>":'<p class="mute">No activity yet.</p>'}
+
+function vSettings(){const s=S.settings;
+  return '<div class="card"><h3>AI controls</h3><label><input type="checkbox" id="kill" style="width:auto"'+(s.kill?" checked":"")+'> Global AI kill switch (on)</label><label><input type="checkbox" id="noai" style="width:auto"'+(s.noAI?" checked":"")+'> No-AI mode</label><label><input type="checkbox" disabled style="width:auto"> Allow paid inference (locked off; this app never enables it)</label><label>Word-count tolerance (%)</label><input id="tol" type="number" value="'+s.tol+'"></div>'+
+  aiCard()+styleCard()+'<div class="card"><h3>Backup and restore</h3><div class="row"><button class="btn" data-a="bkp">Show backup JSON</button><button class="btn alt" data-a="rst">Restore from box</button></div><textarea id="bx" placeholder="Backup JSON appears here. Paste a backup to restore."></textarea></div>'+
+  '<div class="card"><h3>Theme</h3><div class="row"><button class="btn alt" data-a="th" data-v="light">Light</button><button class="btn alt" data-a="th" data-v="dark">Dark</button></div></div>'}
+
+function render(){
+  $("#nav").innerHTML=VIEWS.map(v=>'<button class="'+(view===v[0]?"on":"")+'" data-v="'+v[0]+'">'+v[1]+"</button>").join("")+PLANNED.map(p=>'<button disabled title="Not built yet">'+p+"</button>").join("");
+  const f={overview:vOverview,pens:vPens,series:vSeries,books:vBooks,studio:vStudio,arc:vArc,auto:vAuto,bible:vBible,state:vState,tasks:vTasks,log:vLog,settings:vSettings}[view];
+  paintBusy();const y=scrollY;$("#main").innerHTML="<h2>"+VIEWS.find(v=>v[0]===view)[1]+"</h2>"+f();scrollTo(0,y)}
+
+/* ---------- Actions ---------- */
+const val=i=>($("#"+i)||{}).value||"";
+const A={
+  addPen(){const n=val("pn").trim();if(!n)return msg="Pen name is required.";if(S.pens.some(p=>p.name.toLowerCase()===n.toLowerCase()))return msg="That pen name already exists.";const p={id:id("pen"),name:n,notes:val("pv"),created:now()};S.pens.push(p);log("pen.create",n,p.id);msg=""},
+  delPen(e){if(S.series.some(s=>s.penId===e.dataset.id))return msg="Delete this pen name’s series first.";S.pens=S.pens.filter(p=>p.id!==e.dataset.id);log("pen.delete",e.dataset.id)},
+  addSeries(){const n=val("sn").trim();if(!n)return msg="Series name is required.";const s={id:id("ser"),penId:val("sp"),name:n,genre:val("sg"),created:now()};S.series.push(s);log("series.create",n,s.id);msg=""},
+  delSeries(e){if(S.books.some(b=>b.seriesId===e.dataset.id))return msg="Delete this series’ books first.";S.series=S.series.filter(s=>s.id!==e.dataset.id);log("series.delete",e.dataset.id)},
+  addBook(){const t=val("bt").trim();if(!t)return msg="Title is required.";const sid=val("bs");const b={id:id("bk"),seriesId:sid,title:t,order:S.books.filter(x=>x.seriesId===sid).length+1,target:parseInt(val("bw"))||0,status:"drafting",created:now()};S.books.push(b);log("book.create",t,b.id);bookId=b.id;msg=""},
+  open(e){bookId=e.dataset.id;msg=""},back(){bookId=null;msg=""},
+  addCh(e){if(!approvedBrief(e.dataset.id))return msg="Approve a story brief for this book in Story Studio before adding chapters.";const n=chaptersOf(e.dataset.id).length+1;const c={id:id("ch"),bookId:e.dataset.id,number:n,title:"Chapter "+n,text:"",status:"draft",version:1,created:now(),updated:now()};S.chapters.push(c);log("chapter.create",c.title,c.id);msg=""},
+  delCh(e){const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="draft")return;S.chapters=S.chapters.filter(x=>x!==c);S.chapters.filter(x=>x.bookId===c.bookId).sort((a,b)=>a.number-b.number).forEach((x,i)=>x.number=i+1);log("chapter.delete",c.title)},
+  saveCh(e){const c=S.chapters.find(x=>x.id===e.dataset.id);const v0=c.version,o0=c.outline;syncCh(c);if(c.version===v0&&c.outline===o0)msg="Nothing changed since the last save.";return true},
+  ch(e){const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="approved")syncCh(c);msg=chTransition(c,e.dataset.act);if(e.dataset.act==="approve"&&!msg)postApprove(c)},
+  bk(e){const b=S.books.find(x=>x.id===e.dataset.id);msg=bkTransition(b,e.dataset.act,e.dataset.force==="1")},
+  exp(e){const b=S.books.find(x=>x.id===e.dataset.id);const d=$("#exp");d.innerHTML='<textarea readonly style="margin-top:8px"></textarea>';d.firstChild.value=manuscript(b);d.firstChild.select();log("export",b.title+" ("+(b.status==="approved"?"approved":"unapproved draft")+")",b.id);save();return"keep"},
+  bkp(){$("#bx").value=JSON.stringify(S);return"keep"},
+  rst(){try{const v=JSON.parse(val("bx"));if(!v||!Array.isArray(v.pens)||!Array.isArray(v.books)||!Array.isArray(v.chapters)||!Array.isArray(v.series))throw 0;S=migrate(v);log("restore","Restored from backup");msg=""}catch(x){msg="That is not a valid INKFORGE backup. Nothing was changed.";alert(msg)}},
+  genOutline(e){msg="";const b=S.books.find(x=>x.id===e.dataset.id),br=approvedBrief(b.id);if(!br)return msg="Approve a story brief first.";
+    const n=Math.min(60,Math.max(1,parseInt(val("on"))||20)),ex=chaptersOf(b.id),last=ex[ex.length-1],exT=ex.length?"\n\nCHAPTERS ALREADY IN THE BOOK (do not repeat or re-plan them; the new outline starts at chapter "+(ex.length+1)+" and must follow on from them):\n"+ex.map(c=>"Chapter "+c.number+": "+c.title+" ["+c.status+"]\n"+(c.outline||"").slice(0,500)).join("\n\n")+(wc(last.text)?"\n\nENDING OF CHAPTER "+last.number+":\n"+last.text.slice(-800):"")+"\n\nNARRATIVE STATE SO FAR:\n"+stateText(b.id,9999):"";
+    const arcT=arcBlock(b.id,chaptersOf(b.id).length+1,chaptersOf(b.id).length+n);const p="Plan a "+n+"-chapter outline for the book “"+b.title+"”. Each array item must have string keys: title, pov, purpose, start, events, decisions, beats, progression, conflict, cost, arcBeat, end, refs, target (target is a word count as a string). Do not contradict the approved canon.\n\nAPPROVED STORY BRIEF:\n"+briefText(br)+"\n\nAPPROVED CANON:\n"+canonText(b.seriesId);
+    const t=mkTask("outline",b.id,p+exT+arcT);if(t){t.needsConflict=!!arcT;runTask(t);return"keep"}},
+  genDraft(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return;syncCh(c);const b=S.books.find(x=>x.id===c.bookId),br=approvedBrief(b.id);
+    if(!br)return msg="Approve a story brief first.";if(!(c.outline||"").trim())return msg="Add or generate an outline for this chapter first.";
+    const prev=chaptersOf(b.id).filter(x=>x.number<c.number&&wc(x.text)).pop(),tail=prev?"PREVIOUS CHAPTER ENDING (chapter "+prev.number+"):\n"+prev.text.slice(-1500):"(this is the first chapter)";
+    const tw=parseInt((c.outline.match(/Target words: *(\d+)/)||[])[1])||2500;
+    const p="Write chapter "+c.number+", “"+c.title+"”, as polished prose of roughly "+tw+" words. Honour the brief’s point of view, tense, tone, heat level and content boundaries. Do not contradict approved canon.\n\nSTORY BRIEF:\n"+briefText(br)+"\n\nAPPROVED CANON:\n"+canonText(b.seriesId)+"\n\nNARRATIVE STATE SO FAR (accepted entries):\n"+stateText(b.id,c.number)+"\n\nCHAPTER OUTLINE:\n"+c.outline+"\n\n"+tail+styleBlock(b.id,c)+arcDraft(b.id,c);
+    const t=mkTask("draft",c.id,p);if(t){runTask(t);return"keep"}},
+  useDraft(e){const t=S.tasks.find(x=>x.id===e.dataset.id),c=S.chapters.find(x=>x.id===t.ref);if(c.status==="approved")return msg="Chapter is approved and locked. Reopen it first.";S.versions.push({id:id("ver"),chapterId:c.id,version:c.version,title:c.title,text:c.text,at:now()});c.version++;c.text=t.kind==="continue"?joinCont(c.text,t.result):t.result;c.updated=now();t.closed=true;c.source={task:t.id,snapshot:t.snapshot||null,promptVersion:t.promptVersion,model:t.model,at:now()};log("chapter.ai_draft_applied",c.title+" → v"+c.version+" from "+t.id,c.id);if(S.settings.autoCont){const k=mkCont(c);if(k)runTask(k)}},
+  discardDraft(e){const t=S.tasks.find(x=>x.id===e.dataset.id);t.closed=true;log("task.discard","draft",t.id)},
+  closeT(e){const t=S.tasks.find(x=>x.id===e.dataset.id);t.closed=true;log("task.discard",t.kind,t.id)},
+  applyOutline(e){const t=S.tasks.find(x=>x.id===e.dataset.id),b=S.books.find(x=>x.id===t.ref);if(!approvedBrief(b.id))return msg="Approve a story brief first.";let n=chaptersOf(b.id).length;
+    t.result.forEach(o=>{n++;const q={};Object.keys(o).forEach(k=>q[k]=String(o[k]));S.chapters.push({id:id("ch"),bookId:b.id,number:n,title:String(o.title),outline:fmtOutline(q),text:"",status:"draft",version:1,created:now(),updated:now()})});
+    t.closed=true;log("outline.apply",t.result.length+" chapters added to "+b.title,t.id);bookId=b.id;view="books";msg="";if(S.settings.autoCont){const nc=chaptersOf(b.id).slice(-t.result.length);(async()=>{for(const c of nc){const k=mkCont(c);if(k)await runTask(k)}})()}},
+  runT(e){const t=S.tasks.find(x=>x.id===e.dataset.id);if(t.status==="running")return;msg="";runTask(t);return"keep"},
+  cancelT(e){const t=S.tasks.find(x=>x.id===e.dataset.id);const was=t.status;t.status="cancelled";t.error="Cancelled.";if(was==="running"&&ctl[t.id])ctl[t.id].abort();log("task.cancelled",t.kind,t.id)},
+  saveAI(){msg="";const k=val("apikey").trim(),s=S.settings;if(k){if(/[^\x21-\x7E]/.test(k))msg="That key contains spaces, line breaks or odd characters. Copy it again from Google.";else try{localStorage.setItem(KEYNAME,k)}catch(x){msg="Could not store the key in this browser."}}s.model=val("amodel").trim()||s.model;if($("#abackup"))s.backupModel=val("abackup").trim();s.limit=Math.max(0,parseInt(val("alimit"))||0);s.maxOut=Math.min(32000,Math.max(256,parseInt(val("amax"))||12000));s.retries=Math.min(5,Math.max(0,parseInt(val("aret"))||0));s.timeoutMs=Math.min(600,Math.max(10,parseInt(val("atimeout"))||180))*1000;s.stream=!!($("#astream")||{checked:true}).checked;s.autoCont=!!($("#aauto")||{}).checked;s.autoPost=!!($("#apost")||{}).checked;log("settings","AI settings saved")},
+  listModels(){const key=getKey();if(!key){modelList=null;modelMsg="Save an API key first.";return}
+    modelMsg="Checking…";modelList=null;render();
+    PROVIDERS[S.settings.provider].list({key}).then(l=>{modelList=l;modelMsg=l.length?l.length+" models support text generation. The connection and key work.":"Connected, but no text-generation models were returned.";render();toast(l.length?"Connection works: "+l.length+" models available":"Connected, but no models returned","ok")}).catch(e=>{modelList=null;modelMsg=describeErr(e);render();toast("Connection test failed. See the message in Settings","err")});return"keep"},
+  testSend(){const key=getKey();if(!key){modelList=null;modelMsg="Save an API key first.";return}
+    modelList=null;modelMsg="Sending test messages…";render();const P=PROVIDERS[S.settings.provider],m=S.settings.model;
+    const run=async stream=>{const t0=Date.now(),c=new AbortController(),to=setTimeout(()=>c.abort(),60000),nm=stream?"Streaming":"Normal",el=()=>((Date.now()-t0)/1000).toFixed(1)+"s";
+      try{const r=await P.call({key,model:m,system:"Reply briefly.",prompt:"Reply with the single word OK.",maxOut:300,json:false,signal:c.signal,stream});clearTimeout(to);return nm+": OK in "+el()+", reply “"+r.text.trim().slice(0,40)+"”"+(r.usage?", "+r.usage.total+" tokens":"")}
+      catch(e){clearTimeout(to);return nm+": FAILED after "+el()+". "+(e.name==="AbortError"?"No reply in 60s.":describeErr(e))}};
+    run(false).then(a=>run(true).then(b=>{modelMsg=a+"\n"+b+"\nModel: "+m;render();toast("Test finished. Results are in Settings","info")}));return"keep"},
+  pickModel(e){if(val("pickTarget")==="backup"){S.settings.backupModel=e.dataset.m;log("settings","Backup model set to "+e.dataset.m)}else{S.settings.model=e.dataset.m;log("settings","Model set to "+e.dataset.m)}},
+  clearKey(){try{localStorage.removeItem(KEYNAME)}catch(x){}log("settings","API key removed")},
+  genEdit(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return;syncCh(c);if(!wc(c.text))return msg="Chapter is empty.";const br=approvedBrief(c.bookId);if(!br)return msg="Approve a story brief first.";
+    const sc=apScopeOverride||val("es_"+c.id)||"line",f=br.fields,sid=(S.books.find(b=>b.id===c.bookId)||{}).seriesId;
+    const p="Review ONLY this chapter for: "+SCOPES[sc]+". Return a JSON array of at most 10 findings (empty array if none). Each finding: severity (high|medium|low), category, description, evidence (exact passage copied verbatim from the chapter, under 200 characters), replacement (minimal replacement for exactly that passage, or empty string), action (recommended action), confidence (number 0 to 1). Prefer minimal targeted fixes. Do not rewrite the chapter.\n\nBRIEF CONSTRAINTS:\nTone: "+f.tone+"\nPOV: "+f.pov+"\nTense: "+f.tense+"\nBoundaries: "+f.boundaries+"\nContinuity: "+f.continuity+"\n\nAPPROVED CANON:\n"+canonText(sid)+"\n\nCHAPTER "+c.number+" TEXT:\n"+c.text;
+    const t=mkTask("editorial",c.id,p);if(t){t.scope=sc;t.textHash=cyrb(c.text);runTask(t);return"keep"}},
+  finding(e){msg=fTransition(S.findings.find(x=>x.id===e.dataset.id),e.dataset.act)},
+  fixF(e){const f=S.findings.find(x=>x.id===e.dataset.id),c=S.chapters.find(x=>x.id===f.chapterId);
+    if(c.status==="approved")return msg="Chapter is approved and locked. Reopen it first.";if(!f.replacement||!f.evidence)return msg="No replacement suggested.";
+    if(!c.text.includes(f.evidence)&&(c.outline||"").split(f.evidence).length===2){c.outline=c.outline.replace(f.evidence,()=>f.replacement);c.updated=now();f.status="resolved";log("finding.fix",f.category+" fixed in outline of "+c.title,f.id);msg="";return}
+    const n=c.text.split(f.evidence).length-1;if(n!==1)return msg=n?"Passage appears "+n+" times; edit by hand.":"Passage no longer found; edit by hand.";
+    S.versions.push({id:id("ver"),chapterId:c.id,version:c.version,title:c.title,text:c.text,at:now()});c.version++;c.text=c.text.replace(f.evidence,()=>f.replacement);c.updated=now();f.status="resolved";log("finding.fix",f.category+" fixed in "+c.title+" → v"+c.version,f.id);msg=""},
+  genState(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);syncCh(c);if(!wc(c.text))return msg="Chapter is empty.";
+    const p="Read this chapter and list the story-state changes it establishes. Return a JSON array of at most 12 entries: type (one of "+STYPES.join(", ")+"), subject (the character, object or thread it concerns), description (what is now true: who knows what, relationship shifts, emotional changes, promises, secrets, open threads, objects, timeline events), quote (exact passage copied verbatim from the chapter, under 200 characters). Record only what this chapter itself shows.\n\nKNOWN STATE:\n"+stateText(c.bookId,c.number)+"\n\nCHAPTER "+c.number+" TEXT:\n"+c.text;
+    const t=mkTask("state",c.id,p);if(t){t.textHash=cyrb(c.text);runTask(t);return"keep"}},
+  genAudit(e){msg="";const b=S.books.find(x=>x.id===e.dataset.id),br=approvedBrief(b.id),cs=chaptersOf(b.id).filter(c=>wc(c.text));if(!br)return msg="Approve a story brief first.";if(!cs.length)return msg="No written chapters to audit.";
+    const digest=cs.map(c=>"CHAPTER "+c.number+": "+c.title+"\nOutline: "+(c.outline||"").slice(0,600)+"\nOpening: "+c.text.slice(0,400)+"\nClosing: "+c.text.slice(-400)).join("\n\n").slice(0,24000);
+    const p="Audit the whole manuscript structure (not line edits) for: central conflict development, protagonist arc, romantic pacing, preparation of revelations, climax, ending promises, subplot resolution, and repetition. You see only summaries, openings and closings, so cite evidence only from those, copied verbatim, or leave evidence empty. Return a JSON array of at most 12 findings: severity (high|medium|low), category, description, evidence, replacement (always an empty string), action, confidence (0 to 1). Raise a finding only if it breaks the brief, the canon or a genre promise; do not report personal preferences.\n\nBRIEF:\n"+briefText(br)+"\n\nNARRATIVE STATE:\n"+stateText(b.id,9999)+"\n\n"+digest;
+    const t=mkTask("audit",b.id,p);if(t){t.textHash=cyrb(chaptersOf(b.id).map(c=>c.text).join("\u0001"));runTask(t);return"keep"}},
+  addState(){const d=val("st_d").trim(),sub=val("st_s").trim();if(!d||!sub)return msg="Subject and description are required.";S.state.push({id:id("st"),bookId:selBook,type:val("st_t"),subject:sub,desc:d,chapterId:val("st_c"),quote:"",quoteFound:false,origin:"manual",status:"accepted",version:1,created:now()});log("state.add",sub,selBook);msg=""},
+  stateAct(e){const s=S.state.find(x=>x.id===e.dataset.id),to=(SFLOW[s.status]||{})[e.dataset.act];if(!to)return msg="Not allowed from “"+s.status+"”.";const from=s.status;s.status=to;s.version++;log("state."+e.dataset.act,s.subject+": "+from+" → "+to,s.id);msg=""},
+  corrState(e){const s=S.state.find(x=>x.id===e.dataset.id),d=val("sd_"+s.id).trim();if(!d)return msg="Description cannot be empty.";if(d!==s.desc){s.desc=d;s.version++;log("state.correct",s.subject+" → v"+s.version,s.id)}},
+  delState(e){const s=S.state.find(x=>x.id===e.dataset.id);if(s.status!=="proposed")return msg="Only proposed entries can be deleted. Reject others.";S.state=S.state.filter(x=>x!==s);log("state.delete",s.subject)},
+  genCont(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return;syncCh(c);if(!wc(c.outline||"")&&!wc(c.text))return msg="Nothing to check yet: add an outline or text first.";const t=mkCont(c);if(t){runTask(t);return"keep"}},
+  genCanon(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="approved")syncCh(c);if(!wc(c.text))return msg="Write or draft the chapter first.";const b=S.books.find(x=>x.id===c.bookId);
+    const have=S.canon.filter(x=>x.seriesId===b.seriesId&&["approved","proposed"].includes(x.status)).map(x=>"- ["+x.type+"] "+x.name+": "+x.desc+" ("+x.status+")").join("\n").slice(0,6000)||"(none yet)";
+    const p="Read this chapter and list permanent story facts that belong in the series bible: character facts (age, background, occupation, family, history), places and their properties, timeline and history dates, world rules, established relationships. Do NOT include temporary events, feelings, plans or scene details; those belong in the narrative state. Include only what the chapter states or clearly shows; never invent or guess. Do not repeat entries already listed below. If the chapter gives a different value for an existing entry, include it as a new entry and begin the description with 'UPDATE:'. Return a JSON array of at most 15 entries. Each entry is ONE atomic fact: type (one of "+CTYPES.join(", ")+"), name in the form 'Subject — attribute' (for example 'Noah Bennett — eye colour' or 'Arts centre — year built'), description (just the value or statement), quote (exact passage copied verbatim from the chapter, under 200 characters).\n\nEXISTING SERIES BIBLE:\n"+have+"\n\nCHAPTER "+c.number+" TEXT:\n"+c.text;
+    const t=mkTask("canon",c.id,p);if(t){t.textHash=cyrb(c.text);runTask(t);return"keep"}},
+  fullReview(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return msg="Approved chapters only need Extract state and Propose canon.";syncCh(c);if(!wc(c.text))return msg="Write or draft the chapter first.";
+    const left=S.settings.limit-callsToday();if(left<4)return msg="A full review needs about 4 calls and you have "+left+" left today. Raise the daily limit in Settings.";const why=ineligible();if(why)return msg="AI unavailable: "+why;
+    (async()=>{const t0=now();for(const a of["genCont","genEdit","genState","genCanon"]){A[a]({dataset:{id:c.id}});await settle();if(S.tasks.some(t=>t.updated>=t0&&["failed","queued","cancelled"].includes(t.status)))break}msg="";toast("Full review finished. Check this chapter’s findings, Book State and Series Bible","ok");commit()})();return"keep"},
+  chFast(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);syncCh(c);msg=c.status==="draft"?chTransition(c,"submit"):"";if(!msg)msg=chTransition(c,"approve");if(!msg)postApprove(c)},
+  scanStyle(e){const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status!=="approved")syncCh(c);if(!wc(c.text))return msg="Nothing to scan yet.";styleCache[c.id]={h:cyrb(c.text),res:styleScan(c)}},
+  genStyle(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return msg="Reopen the chapter first.";syncCh(c);const sc=styleCache[c.id];if(!sc||sc.h!==cyrb(c.text))return msg="Scan the chapter first.";
+    const r=sc.res,items=[],add=(why,s)=>{if(s&&s.length<=260&&!items.some(i=>i.s===s)&&c.text.split(s).length===2)items.push({why,s})};
+    r.hits.forEach(h=>add("stock phrase: "+h.phrase,h.ctx));r.nb.ex.forEach(x=>add("'it wasn't X, it was Y' pattern",x));
+    r.motifs.forEach(m=>sentencesOf(c.text).filter(x=>nq(x).includes(m.motif)).slice(1,4).forEach(x=>add("overused motif: "+m.motif,x)));
+    r.rep.forEach(x=>add("repeated phrase: "+x.p,sentencesOf(c.text).find(y=>nq(y).includes(x.p))));
+    const list=items.slice(0,12);if(!list.length)return msg="Nothing suitable to rewrite automatically (the flagged sentences are too long or repeat verbatim). Edit by hand.";
+    const p="Rewrite each numbered sentence so it avoids the stated problem. Keep its meaning, facts, point of view, tense, the characters' voices and its approximate length. Prefer plain, specific, concrete wording over ornate or generic imagery. Do not add new plot facts. Return a JSON array with one finding per sentence: severity 'low', category 'style', description (the problem), evidence (the sentence copied EXACTLY, character for character), replacement (your rewritten sentence), action 'Rewrite', confidence (0 to 1).\n\nSTYLE RULES:\n"+(S.settings.styleRules||STYLE_RULES)+"\n\nSENTENCES:\n"+list.map((i,n)=>(n+1)+". ["+i.why+"] "+i.s).join("\n");
+    const t=mkTask("editorial",c.id,p);if(t){t.scope="style";t.textHash=cyrb(c.text);runTask(t);return"keep"}},
+  saveStyle(){const s=S.settings,on=$("#sty_on");s.styleOn=on?!!on.checked:true;if($("#sty_rules")){const r=val("sty_rules").trim();s.styleRules=r&&r!==STYLE_RULES?r:null}if($("#sty_ban"))s.styleBan=val("sty_ban");if($("#sty_mot"))s.styleMotifs=val("sty_mot");log("settings","Style settings saved")},
+  resetStyle(){const s=S.settings;s.styleRules=null;s.styleBan=null;s.styleMotifs=null;s.styleOn=true;log("settings","Style settings reset")},
+  apStart(){msg="";const b=S.books.find(x=>x.id===selBook);if(!b)return;if(S.autopilot&&S.autopilot.status==="running")return msg="An autopilot run is already in progress.";if(!approvedBrief(b.id))return msg="Approve a story brief first.";
+    const why=ineligible();if(why)return msg="AI unavailable: "+why;const g=i=>{const e=$("#"+i);return e?!!e.checked:false};
+    const o={outlineCheck:g("ap_oc"),editorial:g("ap_ed"),scope:val("ap_scope")||"developmental",extras:g("ap_ex")},n=Math.min(4,Math.max(1,parseInt(val("ap_n"))||2));
+    const ids=chaptersOf(b.id).filter(c=>c.status!=="approved"&&wc(c.outline||"")&&apNext(c,o)&&apNext(c,o)!=="blocked").slice(0,n).map(c=>c.id);if(!ids.length)return msg="No chapters need work. Add outlines to the chapters first.";
+    const est=ids.length*(2+(o.outlineCheck?1:0)+(o.editorial?1:0)+(o.extras?2:0)),left=S.settings.limit-callsToday();if(est>left)return msg="This batch needs about "+est+" calls and you have "+left+" left today. Process fewer chapters, switch off optional steps, or raise the daily limit in Settings.";
+    S.settings.apOpts=o;S.autopilot={bookId:b.id,chapterIds:ids,opts:o,status:"paused",note:"",startedAt:now(),log:[]};toast("Autopilot started for "+ids.length+" chapter(s), about "+est+" calls. It pauses if anything fails","info");runAP();return"keep"},
+  apPause(){if(S.autopilot){S.autopilot.status="paused";S.autopilot.note="Paused by you."}},
+  apResume(){if(!S.autopilot||S.autopilot.status==="running")return;const why=ineligible();if(why)return msg="AI unavailable: "+why;runAP();return"keep"},
+  apStop(){S.autopilot=null},
+  go(e){view=e.dataset.v;if(e.dataset.book){selBook=e.dataset.book;bookId=view==="books"?e.dataset.book:null;const b=S.books.find(x=>x.id===e.dataset.book);if(b)selSeries=b.seriesId}msg=""},
+  acceptState(e){const l=S.state.filter(s=>s.chapterId===e.dataset.id&&s.status==="proposed"&&s.quoteFound);if(!l.length)return msg="No verified proposals to accept.";l.forEach(s=>{s.status="accepted";s.version++});log("state.accept_verified",l.length+" verified entries accepted",e.dataset.id)},
+  clearCool(){S.settings.coolUntil="";S.settings.coolModels={};log("settings","Provider pause cleared")},
+  importCanon(){msg="";let ok=0,dup=0;const bad=[];val("bulk_t").split("\n").forEach((ln,i)=>{const l=ln.trim();if(!l||l[0]==="#")return;const p=l.split("|"),type=(p[0]||"").trim().toLowerCase(),name=(p[1]||"").trim(),desc=p.slice(2).join("|").trim();if(!CTYPES.includes(type)||!name||!desc){bad.push(i+1);return}addCanonEntry(selSeries,{type,name,desc},"import","import")==="dup"?dup++:ok++});
+    log("canon.import",ok+" imported, "+dup+" duplicates, "+bad.length+" invalid",selSeries);
+    if(!ok&&!dup)return msg=bad.length?"No valid lines. Use: type | name | description (check line "+bad[0]+").":"Paste at least one line first.";
+    importMsg=ok+" proposed, "+dup+" duplicate(s) skipped";if(bad.length)msg=importMsg+". Line(s) "+bad.slice(0,5).join(", ")+" need the format: type | name | description"},
+  approveAllCanon(){msg="";const el=S.canon.filter(c=>c.seriesId===selSeries&&c.status==="proposed"&&!(c.origin==="ai"&&!c.quoteFound));let n=0,bad=0;el.forEach(c=>{if(c.status!=="proposed")return;canonTransition(c,"approve")===""?n++:bad++});approveMsg=n+" approved as canon"+(bad?", "+bad+" skipped (conflicts; review them one by one)":"");if(!n&&bad)msg=approveMsg},
+  genBible(){msg="";const bs=S.books.filter(b=>b.seriesId===selSeries&&approvedBrief(b.id));if(!bs.length)return msg="Approve a story brief for a book in this series first (Story Studio).";const b=bs[0],br=approvedBrief(b.id);
+    const have=S.canon.filter(x=>x.seriesId===selSeries&&["approved","proposed"].includes(x.status)).map(x=>"- ["+x.type+"] "+x.name+": "+x.desc).join("\n").slice(0,5000)||"(none yet)";
+    const p="From the approved story brief below, propose the series-bible canon for this book. Return a JSON array of at most 30 entries. Each entry is ONE atomic fact: type (one of "+CTYPES.join(", ")+"), name in the form 'Subject — attribute' (for example 'Lena Hart — age' or 'Arts centre — year built'), description (just the value or statement; for people give specifics such as age, an unusual and specific physical detail, occupation, family, history, a core flaw, and how they speak), quote (always an empty string). Cover: each main character, key secondary characters, the main locations and their physical properties, the institutions, budgets, deadlines and professional or technical facts the plot depends on, a dated backstory timeline, and the key relationships. Use what the brief states. Where the brief is silent, invent specific, plausible details but begin the description with 'ASSUMPTION:' so the owner can check them. Avoid stock descriptors such as: "+banList().slice(0,25).join("; ")+". Do not contradict or repeat the existing canon.\n\nBRIEF:\n"+briefText(br)+"\n\nEXISTING CANON:\n"+have;
+    const t=mkTask("bible",b.id,p);if(t){runTask(t);return"keep"}},
+  genContinue(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return msg="Reopen the chapter first.";syncCh(c);if(!wc(c.text))return msg="Nothing to continue yet. Draft the chapter first.";const b=S.books.find(x=>x.id===c.bookId),br=approvedBrief(c.bookId);if(!br)return msg="Approve a story brief first.";
+    const p="Continue this chapter from the exact point where the text below stops. If it stops mid-sentence, finish that sentence first. Do not repeat anything already written. Complete the chapter following its outline, in the same voice, point of view and tense, and end on a concrete image rather than a summing-up line. Return ONLY the new text to append.\n\nSTORY BRIEF:\n"+briefText(br)+"\n\nAPPROVED CANON:\n"+canonText(b.seriesId)+"\n\nNARRATIVE STATE SO FAR (accepted entries):\n"+stateText(b.id,c.number)+"\n\nCHAPTER OUTLINE:\n"+(c.outline||"")+"\n\nTEXT WRITTEN SO FAR (last part):\n"+c.text.slice(-6000)+styleBlock(b.id,c);
+    const t=mkTask("continue",c.id,p);if(t){t.textHash=cyrb(c.text);runTask(t);return"keep"}},
+  fixJson(e){msg="";const c=S.chapters.find(x=>x.id===e.dataset.id);if(c.status==="approved")return msg="Reopen the chapter first.";syncCh(c);const m=c.text.match(/\{\s*"[A-Za-z_]+"\s*:\s*"/);if(!m)return msg="No leftover JSON found in this chapter.";
+    const head=c.text.slice(0,m.index),tail=unwrapJson(c.text.slice(m.index)).replace(/([a-z][.!?])([A-Z])/g,"$1 $2");
+    S.versions.push({id:id("ver"),chapterId:c.id,version:c.version,title:c.title,text:c.text,at:now()});c.version++;c.text=joinCont(head,tail);c.updated=now();log("chapter.json_repaired",c.title+" → v"+c.version,c.id)},
+  arcBuild(){msg="";const b=S.books.find(x=>x.id===selBook);if(b)buildArc(b.id,val("arc_n"),val("arc_dir").trim())},
+  arcSave(){const a=arcOf(selBook);if(!a)return;if($("#arc_dir"))a.direction=val("arc_dir").trim();a.beats.forEach(bt=>{const c=$("#arc_ch_"+bt.id),s=$("#arc_sm_"+bt.id);if(c){const n=parseInt(c.value);if(n>=1&&n<=200)bt.chapter=n;a.total=Math.max(a.total,bt.chapter)}if(s&&s.value.trim())bt.summary=s.value.trim()});a.updated=now();log("arc.save","edits saved",a.id)},
+  arcMark(e){const a=arcOf(selBook),bt=a&&a.beats.find(x=>x.id===e.dataset.id);if(!bt)return;bt.status=e.dataset.s;log("arc.mark",bt.label+" → "+bt.status,a.id)},
+  arcDel(e){const a=arcOf(selBook);if(!a)return;a.beats=a.beats.filter(x=>x.id!==e.dataset.id);log("arc.remove","beat removed",a.id)},
+  arcAdd(){const a=arcOf(selBook);if(!a)return;a.beats.push({id:id("bt"),key:"custom",label:"New beat",type:"complication",chapter:Math.min(a.total,chaptersOf(a.bookId).length+1),summary:"Describe what goes wrong or changes.",status:"planned"})},
+  arcDrop(){S.arcs=S.arcs.filter(a=>a.bookId!==selBook);log("arc.delete","arc plan deleted",selBook)},
+  arcReplan(){const a=arcOf(selBook);if(!a)return;A.arcSave();const n=replanArc(a);arcMsg=n?n+" beat(s) rescheduled from chapter "+(chaptersOf(a.bookId).length+1):"Nothing needed moving."},
+  genArc(){msg="";const a=arcOf(selBook),b=S.books.find(x=>x.id===selBook);if(!a)return;const cs=chaptersOf(b.id).filter(c=>wc(c.text));if(!cs.length)return msg="Write at least one chapter first.";
+    const beats=a.beats.slice().sort((x,y)=>x.chapter-y.chapter).map(x=>"- Chapter "+x.chapter+" ["+x.type+"] "+x.label+": "+x.summary+" ("+x.status+")").join("\n");
+    const digest=cs.map(c=>"CHAPTER "+c.number+": "+c.title+"\nPlanned conflict: "+confOf(c)+"\nEnding: "+c.text.slice(-500)).join("\n\n").slice(0,22000);
+    const p="Judge the chapters written so far against the arc plan below. Report: scheduled beats that were not truly delivered; stretches where problems are solved neatly with no lasting cost or new problem; conflicts that were raised and quietly dropped; stakes or the deadline clock that never advanced; convenient, too-easy solutions; and where the remaining beats should move. Only report real problems. Return a JSON array of at most 10 findings: severity (high|medium|low), category 'arc', description, evidence (exact passage copied verbatim from the chapter endings below, or an empty string), replacement (always an empty string), action (what to change in the plan or the next chapters), confidence (0 to 1).\n\nARC PLAN:\n"+(a.direction?"Author’s direction: "+a.direction+"\n":"")+beats+"\n\nCHAPTERS WRITTEN:\n"+digest;
+    const t=mkTask("arc",b.id,p);if(t){runTask(t);return"keep"}},
+  newBrief(){const f={};BRIEF.forEach(x=>f[x[0]]="");S.briefs.push({id:id("brf"),bookId:selBook,version:1,status:"draft",fields:f,at:now()});log("brief.create","v1",selBook);msg=""},
+  saveBrief(){const br=briefsOf(selBook)[0];if(br.status!=="draft")return;readBrief(br);br.at=now();log("brief.save","v"+br.version,br.id);msg=""},
+  approveBrief(){const br=briefsOf(selBook)[0];if(br.status!=="draft")return;readBrief(br);const miss=BRIEF.filter(f=>f[3]&&!(br.fields[f[0]]||"").trim()).map(f=>f[1]);if(miss.length){msg="Missing required fields: "+miss.join(", ");return}briefsOf(selBook).forEach(x=>{if(x.status==="approved")x.status="superseded"});br.status="approved";br.approvedAt=now();S.approvals.push({id:id("apr"),kind:"brief",ref:br.id,at:now(),version:br.version});log("brief.approve","v"+br.version,br.id);msg=""},
+  reviseBrief(){const br=briefsOf(selBook)[0];if(br.status!=="approved")return;S.briefs.push({id:id("brf"),bookId:selBook,version:br.version+1,status:"draft",fields:Object.assign({},br.fields),at:now()});log("brief.revise","v"+(br.version+1)+" started from approved v"+br.version,br.id);msg=""},
+  addCanon(){const n=val("cn").trim(),d=val("cd").trim();if(!n||!d)return msg="Name and description are required.";const c={id:id("fact"),seriesId:selSeries,type:val("ct"),name:n,desc:d,source:val("cs"),supersedes:val("cr")||null,status:"proposed",version:1,at:now()};S.canon.push(c);log("canon.propose",c.type+": "+n,c.id);msg=""},
+  canon(e){const c=S.canon.find(x=>x.id===e.dataset.id);syncCanon(c);msg=canonTransition(c,e.dataset.act)},
+  editCanon(e){msg="";const c=S.canon.find(x=>x.id===e.dataset.id);if(c.status!=="proposed")return msg="Approved canon can’t be edited. Propose a replacement instead.";if(!val("ce_n_"+c.id).trim()||!val("ce_d_"+c.id).trim())return msg="Name and description are required.";syncCanon(c)},
+  delCanon(e){const c=S.canon.find(x=>x.id===e.dataset.id);if(c.status!=="proposed")return msg="Only proposed entries can be deleted.";S.canon=S.canon.filter(x=>x!==c);log("canon.delete",c.name)},
+  th(e){document.documentElement.dataset.theme=e.dataset.v;return"keep"}
+};
+function syncCh(c){const t=document.querySelector('[data-f="text"][data-id="'+c.id+'"]'),ti=document.querySelector('[data-f="title"][data-id="'+c.id+'"]');if(!t)return;
+  const ol=document.querySelector('[data-f="outline"][data-id="'+c.id+'"]');if(ol&&ol.value!==(c.outline||"")){c.outline=ol.value;c.updated=now();log("chapter.outline",c.title,c.id)}
+  if(t.value!==c.text||ti.value!==c.title){S.versions.push({id:id("ver"),chapterId:c.id,version:c.version,title:c.title,text:c.text,at:now()});c.version++;c.text=t.value;c.title=ti.value||c.title;c.updated=now();log("chapter.save",c.title+" → v"+c.version,c.id)}}
+
+document.addEventListener("click",ev=>{
+  const v=ev.target.closest("nav button[data-v]");if(v){view=v.dataset.v;bookId=null;msg="";render();return}
+  const b=ev.target.closest("[data-a]");if(!b)return;
+  if(doAction(b)==="keep")return;commit()});
+document.addEventListener("change",ev=>{const t=ev.target;
+  if(t.id==="kill"){S.settings.kill=t.checked;log("settings","AI kill switch "+(t.checked?"on":"off"));commit();toast(t.checked?"Kill switch ON: no AI calls will run":"Kill switch off",t.checked?"info":"warn")}
+  if(t.id==="noai"){S.settings.noAI=t.checked;log("settings","No-AI mode "+(t.checked?"on":"off"));commit();toast(t.checked?"No-AI mode ON: no AI calls will run":"No-AI mode off",t.checked?"info":"warn")}
+  if(t.id==="sb"){selBook=t.value;msg="";render()}if(t.id==="sbs"){selSeries=t.value;msg="";render()}if(t.id==="tol"){S.settings.tol=Math.max(0,parseInt(t.value)||15);commit();toast("Tolerance saved")}});
+
+render();load().then(render);
+(function(){const b=$("#helpBtn"),p=$("#help"),c=$("#helpClose");if(!b||!p||!c)return;const o=()=>{p.hidden=false},x=()=>{p.hidden=true};b.addEventListener("click",o);c.addEventListener("click",x);p.addEventListener("click",e=>{if(e.target===p)x()});document.addEventListener("keydown",e=>{if(e.key==="Escape")x()})})();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
